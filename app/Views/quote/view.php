@@ -155,8 +155,8 @@
                                             $imagePath = base_url('uploads/products/' . $item['pi_p_id'] . '/' . $item['pi_name']);
                                         }
 
-                                        // 圖片檔名就是顏色/花色
-                                        $colorSpec = !empty($item['pi_name']) ? pathinfo($item['pi_name'], PATHINFO_FILENAME) : '';
+                                        // 顏色/花色是明細自己的欄位（來自商品的規格清單）
+                                        $colorSpec = $item['qi_color'] ?? '';
                                         ?>
                                         <tr>
                                             <td class="ps-4">

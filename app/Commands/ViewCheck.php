@@ -64,6 +64,35 @@ class ViewCheck extends BaseCommand
             $fail++;
         }
 
+        // 訂單／報價的商品項目列：明細以「商品」為單位，欄位名稱錯了單據就會存不進明細
+        foreach ([
+            ['order_item_row', 'oi_p_id', 'oi_pi_id'],
+            ['quote_item_row', 'qi_p_id', 'qi_pi_id'],
+        ] as [$component, $field, $removed]) {
+            try {
+                $html = view('components/' . $component, [
+                    'index' => 0,
+                    'item' => [],
+                    'products' => [['p_id' => 1, 'p_name' => '測試商品', 'p_pc_id' => 1,
+                                    'p_standard_price' => 100, 'p_size' => 'A、B']],
+                    'productCategories' => [['pc_id' => 1, 'pc_name' => '測試分類']],
+                    'isTemplate' => true,
+                ]);
+
+                $checks = [
+                    "有送出 {$field}（品項＝商品）" => str_contains($html, "items[0][{$field}]"),
+                    "不再送出已移除的 {$removed}" => ! str_contains($html, $removed),
+                ];
+                foreach ($checks as $name => $pass) {
+                    CLI::write(($pass ? '  [PASS] ' : '  [FAIL] ') . "{$component}：{$name}", $pass ? 'green' : 'red');
+                    $pass ? $ok++ : $fail++;
+                }
+            } catch (\Throwable $e) {
+                CLI::write("  [FAIL] {$component} 渲染：" . get_class($e) . ' ' . $e->getMessage(), 'red');
+                $fail++;
+            }
+        }
+
         CLI::newLine();
         CLI::write("檢查結果：通過 {$ok}　失敗 {$fail}", $fail ? 'red' : 'green');
     }

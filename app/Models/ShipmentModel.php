@@ -164,31 +164,19 @@ class ShipmentModel extends AuditedModel
             return null;
         }
 
-        // 2. 取得出貨項目（關聯訂單項目與產品）
+        // 2. 取得出貨項目（關聯訂單項目與商品，含訂單明細上的規格）
+        //    注意：oi_style 早在 RemoveStyleFields migration 就移除了，不可再 select
         $shipmentItemModel = new ShipmentItemModel();
-        $items = $shipmentItemModel->select('shipment_items.*, order_items.oi_quantity as order_quantity, order_items.oi_shipped_quantity as total_shipped, products.p_name, products.p_image, products.p_code, product_categories.pc_name')
-            ->join('order_items', 'order_items.oi_id = shipment_items.si_oi_id')
-            ->join('products', 'products.p_id = order_items.oi_p_id')
-            ->join('product_categories', 'product_categories.pc_id = products.p_pc_id', 'left')
-            ->where('shipment_items.si_s_id', $id)
-            ->findAll();
-
-        // 補上樣式/顏色/尺寸等資訊 (這些在 order_items)
-        // 再次 join order_items 取得詳細規格，或者直接在上方的 select 加入
-        // 為了確保資訊完整，我調整上方查詢加入 order_items 的規格欄位
-
-        // 重新查詢 items 以包含規格
-        $items = $shipmentItemModel->select('
-                shipment_items.*, 
-                order_items.oi_quantity as order_quantity, 
+        $shipment['items'] = $shipmentItemModel->select('
+                shipment_items.*,
+                order_items.oi_quantity as order_quantity,
                 order_items.oi_shipped_quantity as total_shipped,
-                order_items.oi_style,
                 order_items.oi_color,
                 order_items.oi_size,
                 order_items.oi_supplier,
-                products.p_name, 
-                products.p_image, 
-                products.p_code, 
+                products.p_name,
+                products.p_image,
+                products.p_code,
                 product_categories.pc_name
             ')
             ->join('order_items', 'order_items.oi_id = shipment_items.si_oi_id')
@@ -196,8 +184,6 @@ class ShipmentModel extends AuditedModel
             ->join('product_categories', 'product_categories.pc_id = products.p_pc_id', 'left')
             ->where('shipment_items.si_s_id', $id)
             ->findAll();
-
-        $shipment['items'] = $items;
 
         return $shipment;
     }
@@ -305,29 +291,13 @@ class ShipmentModel extends AuditedModel
     }
 
     /**
-     * 生成新的出貨單號
-     * 格式：S + 年月日 + 流水號(3位)
-     * 例如：S20251128001
-     * 
-     * @return string
+     * 生成新的出貨單號，格式 S20260808-001。
+     *
+     * 走 DocumentNumber 的原子計數器，避免多人同時開單重號。
      */
     public function generateShipmentNumber(): string
     {
-        $date = date('Ymd');
-        $prefix = 'S' . $date;
-
-        $lastShipment = $this->like('s_number', $prefix, 'after')
-            ->orderBy('s_number', 'DESC')
-            ->first();
-
-        if ($lastShipment) {
-            $lastNumber = intval(substr($lastShipment['s_number'], -3));
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        return $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return \App\Libraries\DocumentNumber::daily('S');
     }
 
     /**

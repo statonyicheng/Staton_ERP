@@ -105,29 +105,13 @@ class QuoteModel extends AuditedModel
     }
 
     /**
-     * 生成新的報價單號
-     * 格式：Q + 年月日 + 流水號(3位)
-     * 例如：Q202501270001
-     * 
-     * @return string
+     * 生成新的報價單號，格式 Q20260808-001。
+     *
+     * 走 DocumentNumber 的原子計數器，避免多人同時開單重號。
      */
     public function generateQuoteNumber(): string
     {
-        $date = date('Ymd');
-        $prefix = 'Q' . $date;
-
-        $lastQuote = $this->like('q_number', $prefix, 'after')
-            ->orderBy('q_number', 'DESC')
-            ->first();
-
-        if ($lastQuote) {
-            $lastNumber = intval(substr($lastQuote['q_number'], -3));
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        return $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return \App\Libraries\DocumentNumber::daily('Q');
     }
 
     /**
@@ -140,49 +124,54 @@ class QuoteModel extends AuditedModel
      */
     public function saveQuoteWithItems(array $quoteData, array $items): array
     {
+        $quoteItemModel = new QuoteItemModel();
+        $quoteId = $quoteData['q_id'] ?? null;
+
+        if (empty($quoteData['q_cc_id'])) {
+            $quoteData['q_cc_id'] = null;
+        }
+
+        // 品項以「商品」（qi_p_id）為單位；沒選商品的列視為空白列
+        $items = array_values(array_filter(
+            $items ?: [],
+            static fn ($item) => ! empty($item['qi_p_id']) && ! empty($item['qi_quantity'])
+        ));
+
+        if ($items === []) {
+            return [
+                'success' => false,
+                'message' => '至少需要新增一個有效的商品項目',
+                'quoteId' => null,
+            ];
+        }
+
+        // 驗證通過才開交易，避免中途 return 留下懸空的交易
         $db = \Config\Database::connect();
         $db->transStart();
 
         try {
-            $quoteItemModel = new QuoteItemModel();
-            $quoteId = $quoteData['q_id'] ?? null;
-
-            if (empty($quoteData['q_cc_id'])) {
-                $quoteData['q_cc_id'] = null;
-            }
-
-            // 驗證至少有一個有效的商品項目
-            $validItemCount = 0;
-            foreach ($items as $item) {
-                if (!empty($item['qi_pi_id']) && !empty($item['qi_quantity'])) {
-                    $validItemCount++;
-                }
-            }
-
-            if ($validItemCount === 0) {
-                throw new \Exception('至少需要新增一個有效的商品項目');
-            }
-
-            log_message('debug', print_r($quoteData, true));
             if ($quoteId) {
                 // 更新報價單（直接使用前端傳來的金額）
                 $this->update($quoteId, $quoteData);
 
-                // 刪除舊的項目
+                // 刪除舊的項目（報價單明細沒有下游單據參照，可整批重建）
                 $quoteItemModel->where('qi_q_id', $quoteId)->delete();
             } else {
                 // 新增報價單（直接使用前端傳來的金額）
                 $quoteId = $this->insert($quoteData);
+                if (! $quoteId) {
+                    throw new \RuntimeException('無法建立報價單');
+                }
             }
 
             // 新增項目（直接使用前端傳來的金額）
             foreach ($items as $item) {
-                if (empty($item['qi_pi_id']) || empty($item['qi_quantity'])) {
-                    continue;
-                }
-
+                unset($item['qi_id']);
                 $item['qi_q_id'] = $quoteId;
-                $quoteItemModel->insert($item);
+
+                if (! $quoteItemModel->insert($item)) {
+                    throw new \RuntimeException(implode('、', $quoteItemModel->errors()));
+                }
             }
 
             $db->transComplete();
@@ -200,7 +189,7 @@ class QuoteModel extends AuditedModel
                 'message' => '儲存成功',
                 'quoteId' => $quoteId,
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $db->transRollback();
             return [
                 'success' => false,
@@ -227,7 +216,7 @@ class QuoteModel extends AuditedModel
         }
 
         $validItemCount = count(array_filter($items, function ($item) {
-            return !empty($item['qi_pi_id']) && !empty($item['qi_quantity']);
+            return !empty($item['qi_p_id']) && !empty($item['qi_quantity']);
         }));
 
         if ($validItemCount === 0) {

@@ -199,6 +199,8 @@ class ErpAudit extends BaseCommand
             ['payables', 'ap_no', 'AP'], ['receivables', 'ar_no', 'AR'],
             ['settlements', 'st_no', null], ['work_orders', 'wo_no', 'WO'],
             ['purchase_requisitions', 'pr_no', 'PR'], ['invoices', 'inv_number', 'INV'],
+            ['orders', 'o_number', 'O'], ['quotes', 'q_number', 'Q'],
+            ['shipments', 's_number', 'S'],
         ];
 
         // 1) UNIQUE 索引
@@ -235,6 +237,9 @@ class ErpAudit extends BaseCommand
             foreach ($rows as $r) {
                 $no = (string) $r['v'];
                 if (preg_match('/^([A-Z]+)(\d{8})-(\d+)$/', $no, $m)) {
+                    [$scope, $period, $n] = [$m[1], $m[2], (int) $m[3]];
+                } elseif (preg_match('/^([A-Z]+)(\d{8})(\d{3})$/', $no, $m)) {
+                    // 舊格式（沒有連字號）：訂單/報價/出貨在改用計數器之前的單號
                     [$scope, $period, $n] = [$m[1], $m[2], (int) $m[3]];
                 } elseif (preg_match('/^([A-Z]{2})(\d+)$/', $no, $m)) {
                     [$scope, $period, $n] = ['INV', '', (int) $m[2]];

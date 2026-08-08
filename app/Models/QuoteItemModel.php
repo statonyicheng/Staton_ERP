@@ -10,7 +10,8 @@ class QuoteItemModel extends Model
     protected $primaryKey = 'qi_id';
     protected $allowedFields = [
         'qi_q_id',
-        'qi_pi_id',
+        'qi_p_id',
+        'qi_supplier',
         'qi_color',
         'qi_size',
         'qi_quantity',
@@ -28,7 +29,7 @@ class QuoteItemModel extends Model
     // Validation
     protected $validationRules = [
         'qi_q_id' => 'required|integer',
-        'qi_pi_id' => 'required|integer',
+        'qi_p_id' => 'required|integer',
         'qi_quantity' => 'required|integer|greater_than[0]',
         'qi_unit_price' => 'permit_empty|integer',
         'qi_discount' => 'permit_empty|decimal',
@@ -38,8 +39,8 @@ class QuoteItemModel extends Model
         'qi_q_id' => [
             'required' => '報價單為必填',
         ],
-        'qi_pi_id' => [
-            'required' => '商品圖片為必填',
+        'qi_p_id' => [
+            'required' => '商品為必填',
         ],
         'qi_quantity' => [
             'required' => '數量為必填',
@@ -51,23 +52,27 @@ class QuoteItemModel extends Model
     protected $cleanValidationRules = true;
 
     /**
-     * 取得報價單明細及商品資料（透過 product_images 關聯）
+     * 取得報價單明細及商品資料。
+     *
+     * 品項的單位是「商品」（qi_p_id）；圖片只是顯示用，取該商品的第一張圖。
      */
     public function getItemsWithProduct($quoteId)
     {
-        return $this->select('quote_items.*, 
-                              product_images.pi_name, 
-                              product_images.pi_p_id,
+        return $this->select('quote_items.*,
                               products.p_id,
-                              products.p_name, 
-                              products.p_code, 
-                              products.p_specifications, 
+                              products.p_name,
+                              products.p_code,
+                              products.p_image,
+                              products.p_specifications,
                               products.p_standard_price,
-                              product_categories.pc_name')
-            ->join('product_images', 'product_images.pi_id = quote_items.qi_pi_id', 'left')
-            ->join('products', 'products.p_id = product_images.pi_p_id', 'left')
+                              product_categories.pc_name,
+                              pi.pi_name,
+                              pi.pi_p_id')
+            ->join('products', 'products.p_id = quote_items.qi_p_id', 'left')
             ->join('product_categories', 'product_categories.pc_id = products.p_pc_id', 'left')
+            ->join('(SELECT pi_p_id, pi_name FROM product_images WHERE pi_id IN (SELECT MIN(pi_id) FROM product_images GROUP BY pi_p_id)) pi', 'pi.pi_p_id = products.p_id', 'left')
             ->where('qi_q_id', $quoteId)
+            ->orderBy('qi_id', 'ASC')
             ->findAll();
     }
 }

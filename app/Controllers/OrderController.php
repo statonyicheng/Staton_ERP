@@ -106,7 +106,7 @@ class OrderController extends BaseController
     public function save()
     {
         $data = $this->request->getPost();
-        $items = $this->request->getPost('items');
+        $items = $this->request->getPost('items') ?? [];
 
         $result = $this->orderModel->saveOrderWithItems($data, $items);
 

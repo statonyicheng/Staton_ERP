@@ -176,7 +176,6 @@
                                         $imagePath = !empty($item['p_image']) ? base_url($item['p_image']) : base_url('assets/images/placeholder.png');
 
                                         $specs = array_filter([
-                                            ($item['oi_style'] ?? '') ? "款式:{$item['oi_style']}" : null,
                                             ($item['oi_color'] ?? '') ? "顏色:{$item['oi_color']}" : null,
                                             ($item['oi_size'] ?? '') ? "尺寸:{$item['oi_size']}" : null,
                                         ]);

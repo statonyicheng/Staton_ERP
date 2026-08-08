@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * Helper function: 顯示欄位錯誤訊息
@@ -475,7 +475,6 @@ $productCategories = $productCategories ?? [];
         // --- State ---
         let itemIndex = <?= count($items) ?>;
         const products = <?= json_encode($products) ?>;
-        const productImagesCache = {}; // 快取已載入的圖片資料
 
         // --- Initialization ---
         const customerSelectInstance = initCustomerSelect();
@@ -485,12 +484,7 @@ $productCategories = $productCategories ?? [];
             if (categorySelect && categorySelect.value) {
                 applyCategoryFilter(row, true);
             }
-            // 初始化圖片選擇器
-            const productId = row.dataset.productId;
-            const selectedImageId = row.dataset.imageId;
-            if (productId && selectedImageId) {
-                showImageSelector(row, productId, selectedImageId);
-            }
+            updateVariantSelects(row, findProduct(row.dataset.productId), true);
         });
         initCalculations();
         updateRemoveButtons();
@@ -665,29 +659,15 @@ $productCategories = $productCategories ?? [];
                         this.dropdown_content.style.maxHeight = '250px';
                     },
                     onChange: function(value) {
-                        // 當商品選擇變更時，顯示圖片選擇區並更新價格
+                        // 當商品選擇變更時，更新價格與該商品的規格選項
                         const row = element.closest('.item-row');
                         if (!row) return;
 
-                        if (value) {
-                            const selectedProduct = products.find(p => p.p_id == value);
-                            if (selectedProduct) {
-                                row.querySelector('.price-input').value = selectedProduct.p_standard_price || 0;
-                                // 更新尺寸選單
-                                updateSizeSelect(row, selectedProduct.p_size);
-                            } else {
-                                row.querySelector('.price-input').value = 0;
-                                updateSizeSelect(row, '');
-                            }
-                            
-                            // 顯示圖片選擇區
-                            showImageSelector(row, value);
-                        } else {
-                            row.querySelector('.price-input').value = 0;
-                            updateSizeSelect(row, '');
-                            hideImageSelector(row);
-                        }
+                        const selectedProduct = findProduct(value);
+                        row.querySelector('.price-input').value = selectedProduct ? (selectedProduct.p_standard_price || 0) : 0;
+                        row.dataset.productId = value || '';
 
+                        updateVariantSelects(row, selectedProduct, false);
                         calculateItemAmount(row);
                     }
                 });
@@ -702,44 +682,49 @@ $productCategories = $productCategories ?? [];
             });
         }
 
-        /**
-         * 更新尺寸選單
-         */
-        function updateSizeSelect(row, sizeString) {
-            const sizeSelect = row.querySelector('.size-select');
-            if (!sizeSelect) return;
+        function findProduct(productId) {
+            if (!productId) return null;
+            return products.find(p => String(p.p_id) === String(productId)) || null;
+        }
 
-            const currentValue = sizeSelect.value;
-            
-            // 清空選單
-            sizeSelect.innerHTML = '<option value="">請選擇尺寸</option>';
-            
-            if (!sizeString || sizeString.trim() === '') {
-                return;
-            }
-            
-            // 分割尺寸字串（用中文頓號"、"分隔）
-            const sizes = sizeString.split('、').map(s => s.trim()).filter(s => s !== '');
-            
-            if (sizes.length === 0) {
-                return;
-            }
-            
-            // 添加尺寸選項
-            sizes.forEach(size => {
-                const option = document.createElement('option');
-                option.value = size;
-                option.textContent = size;
-                // 如果之前選擇的值還存在，保持選中
-                if (size === currentValue) {
-                    option.selected = true;
+        /**
+         * 依所選商品更新該列的規格選單（尺寸／顏色花色／供應商）。
+         * 這些值來自 products 的「、」分隔清單，存進報價明細後轉單會一起帶到訂單。
+         */
+        function updateVariantSelects(row, product, preserveExisting) {
+            const targets = [
+                ['.size-select', product ? product.p_size : '', row.dataset.selectedSize || ''],
+                ['.color-select', product ? product.p_color : '', row.dataset.selectedColor || ''],
+                ['.supplier-select', product ? product.p_supplier : '', row.dataset.selectedSupplier || ''],
+            ];
+
+            targets.forEach(([selector, source, saved]) => {
+                const selectEl = row.querySelector(selector);
+                if (!selectEl) return;
+
+                const current = preserveExisting ? (selectEl.value || saved) : saved;
+                const values = (source || '').split('、').map(s => s.trim()).filter(Boolean);
+
+                // 第一個選項保留原本的提示字（尺寸、顏色/花色、供應商）
+                selectEl.innerHTML = `<option value="">${selectEl.getAttribute('title') || ''}</option>`;
+                values.forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v;
+                    option.textContent = v;
+                    selectEl.appendChild(option);
+                });
+
+                if (current && values.includes(current)) {
+                    selectEl.value = current;
+                } else if (values.length === 1) {
+                    selectEl.value = values[0];
                 }
-                sizeSelect.appendChild(option);
             });
-            
-            // 如果只有一個尺寸，自動選中
-            if (sizes.length === 1) {
-                sizeSelect.value = sizes[0];
+
+            const imagePreview = row.querySelector('.item-image-preview');
+            if (imagePreview) {
+                const placeholder = imagePreview.dataset.placeholder || '';
+                imagePreview.src = (product && product.p_image) ? '<?= base_url() ?>' + product.p_image : placeholder;
             }
         }
 
@@ -852,14 +837,13 @@ $productCategories = $productCategories ?? [];
                 return false;
             }
 
-            // 驗證每個商品項目都有選擇圖片
+            // 每一列都必須有選商品（明細以商品為單位）
             for (const row of items) {
                 const productSelect = row.querySelector('.product-select');
-                const imageIdInput = row.querySelector('.image-id-input');
-                
-                if (productSelect && productSelect.value && (!imageIdInput || !imageIdInput.value)) {
+
+                if (!productSelect || !productSelect.value) {
                     e.preventDefault();
-                    alert('請為每個商品選擇圖片/顏色');
+                    alert('請為每一列選擇商品，或刪除多餘的空白列');
                     return false;
                 }
             }
@@ -916,163 +900,13 @@ $productCategories = $productCategories ?? [];
 
             if (shouldPreserveValue && productSelect.tomselect) {
                 productSelect.tomselect.setValue(currentValue, true);
-                // 保留值時也要顯示圖片選擇器
-                if (currentValue) {
-                    const selectedImageId = row.dataset.imageId;
-                    showImageSelector(row, currentValue, selectedImageId);
-                }
             } else if (productSelect.tomselect) {
                 productSelect.tomselect.clear();
                 row.querySelector('.price-input').value = 0;
-                hideImageSelector(row);
+                row.dataset.productId = '';
+                updateVariantSelects(row, null, false);
                 calculateItemAmount(row);
             }
-        }
-
-        /**
-         * 顯示圖片選擇區（使用 AJAX 載入）
-         */
-        async function showImageSelector(row, productId, selectedImageId = null) {
-            const container = row.querySelector('.image-selector-container');
-            const imageGrid = row.querySelector('.image-grid');
-            const imageIdInput = row.querySelector('.image-id-input');
-            const imagePreview = row.querySelector('.item-image-preview');
-            const placeholder = imagePreview?.dataset.placeholder || '';
-            const rowIndex = row.closest('tr')?.rowIndex || Date.now();
-
-            if (!container || !imageGrid) return;
-
-            // 顯示載入中
-            imageGrid.innerHTML = '<div class="text-center p-2"><span class="spinner-border spinner-border-sm"></span> 載入中...</div>';
-            container.style.display = 'block';
-
-            try {
-                let images = [];
-
-                // 檢查快取
-                if (productImagesCache[productId]) {
-                    images = productImagesCache[productId];
-                } else {
-                    // AJAX 載入圖片
-                    const response = await fetch(`<?= base_url() ?>quote/getProductImages/${productId}`, {
-                        method: 'GET',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    const data = await response.json();
-
-                    if (!data.success) {
-                        throw new Error(data.message || '載入圖片失敗');
-                    }
-
-                    images = data.images || [];
-                    // 存入快取
-                    productImagesCache[productId] = images;
-                }
-
-                // 如果沒有圖片
-                if (images.length === 0) {
-                    imageGrid.innerHTML = '<div class="text-center p-2 text-muted"><i class="bi bi-image"></i> 此商品尚無圖片</div>';
-                    if (imageIdInput) imageIdInput.value = '';
-                    if (imagePreview) imagePreview.src = placeholder;
-                    return;
-                }
-
-                // 清空並重建圖片選項
-                imageGrid.innerHTML = '';
-
-                images.forEach(image => {
-                    const imageItem = document.createElement('label');
-                    imageItem.className = 'image-item d-flex flex-column align-items-center';
-                    imageItem.style.cursor = 'pointer';
-                    
-                    const isSelected = selectedImageId && image.pi_id == selectedImageId;
-                    const radioName = `image_row_${rowIndex}`;
-
-                    imageItem.innerHTML = `
-                        <input type="radio" 
-                            name="${radioName}" 
-                            value="${image.pi_id}" 
-                            class="form-check-input me-0 mb-1"
-                            ${isSelected ? 'checked' : ''}
-                            style="transform: scale(1.2);">
-                        <div class="border rounded overflow-hidden" style="width: 60px; height: 60px;">
-                            <img src="<?= base_url() ?>uploads/products/${productId}/${image.pi_name}" 
-                                class="img-fluid object-fit-cover w-100 h-100"
-                                alt="${image.pi_name}">
-                        </div>
-                        <small class="text-muted mt-1 text-center" style="max-width: 60px; font-size: 0.7rem; word-break: break-all;">
-                            ${image.pi_name}
-                        </small>
-                    `;
-
-                    // 點擊選擇圖片
-                    const radio = imageItem.querySelector('input[type="radio"]');
-                    radio.addEventListener('change', function() {
-                        if (this.checked) {
-                            // 更新隱藏欄位
-                            if (imageIdInput) {
-                                imageIdInput.value = image.pi_id;
-                            }
-                            
-                            // 更新預覽圖
-                            if (imagePreview) {
-                                imagePreview.src = `<?= base_url() ?>uploads/products/${productId}/${image.pi_name}`;
-                            }
-
-                            // 更新 row 的 data 屬性
-                            row.dataset.productId = productId;
-                            row.dataset.imageId = image.pi_id;
-                        }
-                    });
-
-                    imageGrid.appendChild(imageItem);
-                });
-
-                // 如果有預設選擇，更新預覽圖
-                if (selectedImageId) {
-                    const selectedImage = images.find(img => img.pi_id == selectedImageId);
-                    if (selectedImage && imagePreview) {
-                        imagePreview.src = `<?= base_url() ?>uploads/products/${productId}/${selectedImage.pi_name}`;
-                    }
-                } else if (imagePreview) {
-                    imagePreview.src = placeholder;
-                }
-            } catch (error) {
-                console.error('載入圖片失敗:', error);
-                imageGrid.innerHTML = `<div class="text-center p-2 text-danger"><i class="bi bi-exclamation-triangle"></i> ${error.message}</div>`;
-                if (imageIdInput) imageIdInput.value = '';
-                if (imagePreview) imagePreview.src = placeholder;
-            }
-        }
-
-        /**
-         * 隱藏圖片選擇區
-         */
-        function hideImageSelector(row) {
-            const container = row.querySelector('.image-selector-container');
-            const imageIdInput = row.querySelector('.image-id-input');
-            const imagePreview = row.querySelector('.item-image-preview');
-            const placeholder = imagePreview?.dataset.placeholder || '';
-
-            if (container) {
-                container.style.display = 'none';
-            }
-
-            if (imageIdInput) {
-                imageIdInput.value = '';
-            }
-
-            if (imagePreview) {
-                imagePreview.src = placeholder;
-            }
-
-            // 清除 row 的 data 屬性
-            row.dataset.productId = '';
-            row.dataset.imageId = '';
         }
 
         function getProductsByCategory(categoryId) {

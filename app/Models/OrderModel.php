@@ -161,11 +161,12 @@ class OrderModel extends AuditedModel
         $orderItems = [];
         foreach ($quote['items'] as $item) {
             $orderItems[] = [
-                'oi_pi_id' => $item['qi_pi_id'],
+                'oi_p_id' => $item['qi_p_id'],
                 'oi_quantity' => $item['qi_quantity'],
                 'oi_unit_price' => $item['qi_unit_price'],
                 'oi_discount' => $item['qi_discount'],
                 'oi_amount' => $item['qi_quantity'] * $item['qi_unit_price'] * (1 - $item['qi_discount'] / 100),
+                'oi_supplier' => $item['qi_supplier'] ?? null,
                 'oi_color' => $item['qi_color'],
                 'oi_size' => $item['qi_size'],
             ];
@@ -183,109 +184,108 @@ class OrderModel extends AuditedModel
         return false;
     }
 
-    // 儲存訂單及其項目
+    /**
+     * 儲存訂單及其項目。
+     *
+     * 品項以「商品」（oi_p_id）為單位；沒有選商品的列視為空白列直接略過。
+     * 所有檢查都在開啟交易「之前」做完，避免中途 return 留下懸空的交易
+     * （懸空交易會讓同一連線後續的寫入被一起回滾）。
+     * 編輯時採逐筆比對更新，不整批刪除重建 —— 否則已出貨數量會歸零，
+     * 出貨明細（shipment_items.si_oi_id）也會跟著失聯。
+     */
     public function saveOrderWithItems(array $orderData, array $items): array
     {
+        $orderItemModel = new OrderItemModel();
+        $orderId = $orderData['o_id'] ?? null;
+        $orderData['o_cc_id'] = ($orderData['o_cc_id'] ?? '') === '' ? null : $orderData['o_cc_id'];
+
+        // 只留下真的有選商品的列
+        $items = array_values(array_filter(
+            $items ?: [],
+            static fn ($item) => ! empty($item['oi_p_id']) && ! empty($item['oi_quantity'])
+        ));
+
+        if ($items === []) {
+            return $this->saveFailed('至少需要一個有效的商品項目（請選擇商品並填入數量）');
+        }
+
+        if (! $this->validate($orderData)) {
+            return $this->saveFailed('驗證失敗：' . implode(', ', $this->errors()));
+        }
+
+        // ---- 編輯模式：先確認這次修改不會弄丟已出貨的紀錄 ----
+        $oldItems = [];
+        if ($orderId) {
+            foreach ($orderItemModel->where('oi_o_id', $orderId)->findAll() as $oldItem) {
+                $oldItems[(int) $oldItem['oi_id']] = $oldItem;
+            }
+
+            $keptIds = [];
+            foreach ($items as $item) {
+                $itemId = (int) ($item['oi_id'] ?? 0);
+                if (! isset($oldItems[$itemId])) {
+                    continue;   // 新增的列
+                }
+
+                $keptIds[] = $itemId;
+                $shippedQty = (int) ($oldItems[$itemId]['oi_shipped_quantity'] ?? 0);
+
+                if ($shippedQty > 0 && (int) $item['oi_p_id'] !== (int) $oldItems[$itemId]['oi_p_id']) {
+                    return $this->saveFailed('已有出貨記錄的品項不可更換商品（請改為新增一列）');
+                }
+
+                if ((int) $item['oi_quantity'] < $shippedQty) {
+                    return $this->saveFailed("商品訂購數量不能小於已出貨數量 (已出貨：{$shippedQty})");
+                }
+            }
+
+            foreach ($oldItems as $itemId => $oldItem) {
+                if (! in_array($itemId, $keptIds, true) && (int) ($oldItem['oi_shipped_quantity'] ?? 0) > 0) {
+                    return $this->saveFailed('無法刪除已有出貨記錄的商品項目');
+                }
+            }
+        }
+
+        // ---- 檢查都過了才開交易 ----
         $db = \Config\Database::connect();
         $db->transStart();
 
         try {
-            $orderItemModel = new OrderItemModel();
-            $orderId = $orderData['o_id'] ?? null;
-            $orderData['o_cc_id'] = $orderData['o_cc_id'] ?? null;
-
-            // 手動驗證資料
-            if (!$this->validate($orderData)) {
-                return [
-                    'success' => false,
-                    'message' => '驗證失敗：' . implode(', ', $this->errors()),
-                    'orderId' => null,
-                ];
-            }
-
             if ($orderId) {
-                // 更新訂單：需要驗證修改的合法性
-                $oldItems = $orderItemModel->where('oi_o_id', $orderId)->findAll();
-
-                // 建立舊項目的映射（以圖片ID為鍵）
-                $oldItemsMap = [];
-                foreach ($oldItems as $oldItem) {
-                    $oldItemsMap[$oldItem['oi_pi_id']] = $oldItem;
-                }
-
-                // 驗證新項目
-                foreach ($items as $item) {
-                    if (empty($item['oi_pi_id'])) {
-                        continue;
-                    }
-
-                    $imageId = $item['oi_pi_id'];
-                    $newQuantity = $item['oi_quantity'];
-
-                    // 如果是現有項目，檢查數量是否小於已出貨數量
-                    if (isset($oldItemsMap[$imageId])) {
-                        $shippedQty = $oldItemsMap[$imageId]['oi_shipped_quantity'] ?? 0;
-
-                        if ($newQuantity < $shippedQty) {
-                            return [
-                                'success' => false,
-                                'message' => "商品訂購數量不能小於已出貨數量 (已出貨：{$shippedQty})",
-                                'orderId' => null,
-                            ];
-                        }
-
-                        // 從映射中移除，剩下的就是被刪除的項目
-                        unset($oldItemsMap[$imageId]);
-                    }
-                }
-
-                // 檢查被刪除的項目是否有出貨記錄
-                foreach ($oldItemsMap as $deletedItem) {
-                    $shippedQty = $deletedItem['oi_shipped_quantity'] ?? 0;
-                    if ($shippedQty > 0) {
-                        return [
-                            'success' => false,
-                            'message' => '無法刪除已有出貨記錄的商品項目',
-                            'orderId' => null,
-                        ];
-                    }
-                }
-
-                // 更新訂單
                 $this->update($orderId, $orderData);
-
-                // 刪除舊的項目
-                $orderItemModel->where('oi_o_id', $orderId)->delete();
             } else {
-                // 新增訂單
                 $orderId = $this->insert($orderData);
-                if (!$orderId) {
-                    return [
-                        'success' => false,
-                        'message' => '儲存失敗：無法建立訂單',
-                        'orderId' => null,
-                    ];
+                if (! $orderId) {
+                    throw new \RuntimeException('無法建立訂單');
                 }
             }
 
-            // 新增項目
+            $keptIds = [];
             foreach ($items as $item) {
-                if (empty($item['oi_pi_id'])) {
-                    continue;
-                }
-
+                $itemId = (int) ($item['oi_id'] ?? 0);
+                unset($item['oi_id']);
                 $item['oi_o_id'] = $orderId;
-                $orderItemModel->insert($item);
+
+                if ($itemId && isset($oldItems[$itemId])) {
+                    // 既有品項：只更新內容，保留 oi_id 與已出貨數量
+                    $orderItemModel->update($itemId, $item);
+                    $keptIds[] = $itemId;
+                } else {
+                    $orderItemModel->insert($item);
+                    $keptIds[] = (int) $orderItemModel->getInsertID();
+                }
+            }
+
+            // 這次沒送上來的舊品項才刪除（上面已確認它們都沒有出貨紀錄）
+            $removedIds = array_diff(array_keys($oldItems), $keptIds);
+            if ($removedIds !== []) {
+                $orderItemModel->whereIn('oi_id', $removedIds)->delete();
             }
 
             $db->transComplete();
 
             if ($db->transStatus() === false) {
-                return [
-                    'success' => false,
-                    'message' => '儲存失敗，請稍後再試',
-                    'orderId' => null,
-                ];
+                return $this->saveFailed('儲存失敗，請稍後再試');
             }
 
             return [
@@ -293,40 +293,30 @@ class OrderModel extends AuditedModel
                 'message' => '儲存成功',
                 'orderId' => $orderId,
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $db->transRollback();
-            return [
-                'success' => false,
-                'message' => '儲存失敗：' . $e->getMessage(),
-                'orderId' => null,
-            ];
+            return $this->saveFailed('儲存失敗：' . $e->getMessage());
         }
     }
 
+    private function saveFailed(string $message): array
+    {
+        return [
+            'success' => false,
+            'message' => $message,
+            'orderId' => null,
+        ];
+    }
+
     /**
-     * 生成新的訂單號
-     * 格式：O + 年月日 + 流水號(3位)
-     * 例如：O20250127001
-     * 
-     * @return string
+     * 生成新的訂單號，格式 O20260808-001。
+     *
+     * 走 DocumentNumber 的原子計數器，多人同一秒開單也不會拿到同一個號
+     * （原本的「查最大號再加一」在兩人同時操作時會安靜重號）。
      */
     public function generateOrderNumber(): string
     {
-        $date = date('Ymd');
-        $prefix = 'O' . $date;
-
-        $lastOrder = $this->like('o_number', $prefix, 'after')
-            ->orderBy('o_number', 'DESC')
-            ->first();
-
-        if ($lastOrder) {
-            $lastNumber = intval(substr($lastOrder['o_number'], -3));
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        return $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return \App\Libraries\DocumentNumber::daily('O');
     }
 
     /**

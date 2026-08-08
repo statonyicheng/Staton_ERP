@@ -161,6 +161,7 @@ class QuoteController extends BaseController
     public function save()
     {
         $quoteData = $this->request->getPost();
+        $quoteData['items'] = $quoteData['items'] ?? [];
 
         // 檢查報價單號唯一性
         $quoteId = $quoteData['q_id'] ?? null;

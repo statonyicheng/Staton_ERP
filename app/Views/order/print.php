@@ -359,8 +359,8 @@
                 <?php if (!empty($data['items'])): ?>
                     <?php foreach ($data['items'] as $item): ?>
                         <?php
-                        // 圖片檔名就是顏色/花色
-                        $colorSpec = !empty($item['pi_name']) ? pathinfo($item['pi_name'], PATHINFO_FILENAME) : '';
+                        // 顏色/花色是明細自己的欄位（來自商品的規格清單）
+                        $colorSpec = $item['oi_color'] ?? '';
                         ?>
                         <tr>
                             <td class="text-left"> <?= $item['p_name']; ?></td>

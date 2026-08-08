@@ -2,7 +2,11 @@
 
 /**
  * 報價單商品項目行組件
- * 
+ *
+ * 品項的單位是「商品」（qi_p_id），與訂單一致（轉單時直接對應）。
+ * 顏色/花色與尺寸是該商品的規格（來自 products.p_color / p_size），存在明細上。
+ * 圖片只是顯示用，取商品自己的圖片，不參與存檔。
+ *
  * 使用方式：
  * 1. 在 PHP 循環中渲染現有項目：
  *    foreach ($items as $index => $item) {
@@ -13,12 +17,12 @@
  *            'isTemplate' => false
  *        ]);
  *    }
- * 
+ *
  * 2. 作為 JavaScript 模板：
  *    <template id="itemRowTemplate">
  *        <?= view('components/quote_item_row', ['index' => '__INDEX__', 'item' => [], 'products' => $products, 'isTemplate' => true]) ?>
  *    </template>
- * 
+ *
  * @param int|string $index 項目索引
  * @param array $item 項目資料
  * @param array $products 商品列表
@@ -34,7 +38,10 @@ $isTemplate = $isTemplate ?? false;
 // 預設值
 $defaults = [
     'qi_id' => '',
-    'qi_pi_id' => '',
+    'qi_p_id' => '',
+    'qi_supplier' => '',
+    'qi_color' => '',
+    'qi_size' => '',
     'qi_quantity' => 1,
     'qi_unit_price' => 0,
     'qi_discount' => 0,
@@ -42,11 +49,7 @@ $defaults = [
 
 $item = array_merge($defaults, $item);
 
-// 取得選中商品的 ID（透過 pi_p_id）
-$selectedProductId = '';
-if (!empty($item['qi_pi_id']) && !empty($item['pi_p_id'])) {
-    $selectedProductId = $item['pi_p_id'];
-}
+$selectedProductId = $item['qi_p_id'] ?? '';
 
 // 找出選中商品的分類
 $selectedCategoryId = '';
@@ -58,24 +61,24 @@ if (!empty($selectedProductId)) {
         }
     }
 }
-?>
 
-<?php
-// 取得已選擇的圖片
+// 商品圖片（純顯示）：優先用商品主圖，其次用商品的第一張圖
 $selectedImage = '';
-if (!empty($item['qi_pi_id']) && !empty($selectedProductId) && !empty($item['pi_name'])) {
-    $selectedImage = base_url('uploads/products/' . $selectedProductId . '/' . $item['pi_name']);
+if (!empty($item['p_image'])) {
+    $selectedImage = base_url($item['p_image']);
+} elseif (!empty($item['pi_name']) && !empty($item['pi_p_id'])) {
+    $selectedImage = base_url('uploads/products/' . $item['pi_p_id'] . '/' . $item['pi_name']);
 }
 $placeholder = base_url('images/placeholder.png');
 ?>
-<tr class="item-row" 
-    data-product-id="<?= $selectedProductId ?>" 
-    data-image-id="<?= $item['qi_pi_id'] ?? '' ?>"
+<tr class="item-row"
+    data-product-id="<?= esc($selectedProductId) ?>"
+    data-selected-supplier="<?= esc($item['qi_supplier'] ?? '') ?>"
+    data-selected-color="<?= esc($item['qi_color'] ?? '') ?>"
     data-selected-size="<?= esc($item['qi_size'] ?? '') ?>">
     <!-- 商品圖片預覽 -->
     <td style="width: 8%;" class="align-middle">
         <input type="hidden" name="items[<?= $index ?>][qi_id]" value="<?= esc($item['qi_id']) ?>">
-        <input type="hidden" name="items[<?= $index ?>][qi_pi_id]" class="image-id-input" value="<?= esc($item['qi_pi_id']) ?>" required>
         <div class="ratio ratio-1x1 border rounded overflow-hidden bg-light shadow-sm">
             <img src="<?= esc($selectedImage ?: $placeholder) ?>"
                 class="img-fluid item-image-preview object-fit-cover"
@@ -97,6 +100,7 @@ $placeholder = base_url('images/placeholder.png');
                 <?php endforeach; ?>
             </select>
             <select class="form-select form-select-sm product-select"
+                name="items[<?= $index ?>][qi_p_id]"
                 data-index="<?= $index ?>"
                 title="選擇商品"
                 required>
@@ -111,12 +115,23 @@ $placeholder = base_url('images/placeholder.png');
                     </option>
                 <?php endforeach; ?>
             </select>
-            <!-- 圖片選擇區（初始隱藏） -->
-            <div class="image-selector-container" style="display: none;">
-                <small class="text-muted mb-1 d-block">請選擇顏色/花色：</small>
-                <div class="image-grid d-flex flex-wrap gap-2">
-                    <!-- 圖片選項將由 JavaScript 動態產生 -->
-                </div>
+            <div class="d-flex gap-2">
+                <select class="form-select form-select-sm color-select"
+                    name="items[<?= $index ?>][qi_color]"
+                    title="顏色/花色">
+                    <option value="">顏色/花色</option>
+                    <?php if (!empty($item['qi_color'])): ?>
+                        <option value="<?= esc($item['qi_color']) ?>" selected><?= esc($item['qi_color']) ?></option>
+                    <?php endif; ?>
+                </select>
+                <select class="form-select form-select-sm supplier-select"
+                    name="items[<?= $index ?>][qi_supplier]"
+                    title="供應商">
+                    <option value="">供應商</option>
+                    <?php if (!empty($item['qi_supplier'])): ?>
+                        <option value="<?= esc($item['qi_supplier']) ?>" selected><?= esc($item['qi_supplier']) ?></option>
+                    <?php endif; ?>
+                </select>
             </div>
         </div>
     </td>
@@ -124,9 +139,8 @@ $placeholder = base_url('images/placeholder.png');
     <td style="width: 10%;" class="align-middle">
         <select class="form-select form-select-sm size-select"
             name="items[<?= $index ?>][qi_size]"
-            title="尺寸"
-            required>
-            <option value="">請選擇尺寸</option>
+            title="尺寸">
+            <option value="">尺寸</option>
             <?php if (!empty($item['qi_size'])): ?>
                 <option value="<?= esc($item['qi_size']) ?>" selected><?= esc($item['qi_size']) ?></option>
             <?php endif; ?>
@@ -158,7 +172,7 @@ $placeholder = base_url('images/placeholder.png');
     <td style="width: 10%;" class="align-middle">
         <input type="text" class="form-control form-control-sm amount-display text-end bg-light fw-bold"
             name="items[<?= $index ?>][qi_amount]"
-            value="0"
+            value="<?= $item['qi_amount'] ?? 0 ?>"
             title="小計金額"
             readonly>
     </td>
