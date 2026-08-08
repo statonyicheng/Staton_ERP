@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class PayableModel extends Model
+class PayableModel extends AuditedModel
 {
     protected $table = 'payables';
     protected $primaryKey = 'ap_id';

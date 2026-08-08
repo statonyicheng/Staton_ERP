@@ -70,10 +70,18 @@ class UserController extends BaseController
             return redirect()->back()->withInput()->with('validation', $this->validator);
         }
 
+        // 角色：未指定或不認得的一律降為唯讀，避免誤給過大權限
+        $role = (string) $this->request->getPost('u_role');
+        if (! isset(\Config\Permission::ROLES[$role])) {
+            $role = 'readonly';
+        }
+
         $data = [
             'u_username' => $username,
             'u_name'     => $name,
-            'u_is_admin' => $this->request->getPost('u_is_admin') ? 1 : 0,
+            'u_role'     => $role,
+            // u_is_admin 與角色保持同步（AdminFilter 等舊程式仍依賴它）
+            'u_is_admin' => $role === 'admin' ? 1 : 0,
         ];
 
         if ($password !== '') {
@@ -82,7 +90,7 @@ class UserController extends BaseController
 
         if ($isEdit) {
             if ((int) $id === (int) session()->get('userId') && $data['u_is_admin'] === 0) {
-                return redirect()->back()->withInput()->with('error', '無法取消自身的管理員權限');
+                return redirect()->back()->withInput()->with('error', '無法把自己降級，否則將沒有人能管理系統');
             }
 
             $this->userModel->update($id, $data);

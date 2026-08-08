@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class FixedAssetModel extends Model
+class FixedAssetModel extends AuditedModel
 {
     protected $table = 'fixed_assets';
     protected $primaryKey = 'fa_id';

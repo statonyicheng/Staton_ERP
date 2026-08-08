@@ -79,9 +79,21 @@ $groups = [
 $sysItems = [];
 if ($adminOnly) {
     $sysItems[] = ['使用者管理', 'user', 'bi-people-fill', false];
+    $sysItems[] = ['操作紀錄', 'audit-log', 'bi-clock-history', false];
 }
 $sysItems[] = ['個人資料', 'profile', 'bi-person', false];
 $groups[] = ['id' => 'grpSystem', 'label' => '系統管理', 'icon' => 'bi-gear', 'items' => $sysItems];
+
+// 依角色過濾側邊欄：看不到的模組直接不顯示，避免使用者點了才被擋
+$role = (string) (session()->get('role') ?: ($adminOnly ? 'admin' : 'readonly'));
+foreach ($groups as $gi => $g) {
+    $groups[$gi]['items'] = array_values(array_filter(
+        $g['items'],
+        fn($it) => \Config\Permission::canView($role, \Config\Permission::moduleOf($it[1]))
+    ));
+}
+// 整組都沒權限就把群組收掉
+$groups = array_values(array_filter($groups, fn($g) => !empty($g['items'])));
 
 // 計算每個群組是否需展開（含 active 項目，或預設展開前兩個營運群組）
 $defaultOpen = ['grpBase', 'grpSales'];

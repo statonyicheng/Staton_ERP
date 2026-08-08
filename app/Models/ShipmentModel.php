@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class ShipmentModel extends Model
+class ShipmentModel extends AuditedModel
 {
     protected $table = 'shipments';
     protected $primaryKey = 's_id';
@@ -85,14 +85,6 @@ class ShipmentModel extends Model
 
     // Callbacks
     protected $allowCallbacks = true;
-    protected $beforeInsert = [];
-    protected $afterInsert = [];
-    protected $beforeUpdate = [];
-    protected $afterUpdate = [];
-    protected $beforeFind = [];
-    protected $afterFind = [];
-    protected $beforeDelete = [];
-    protected $afterDelete = [];
 
     /**
      * 取得出貨單及訂單資料

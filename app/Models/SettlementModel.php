@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class SettlementModel extends Model
+class SettlementModel extends AuditedModel
 {
     protected $table = 'settlements';
     protected $primaryKey = 'st_id';

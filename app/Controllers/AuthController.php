@@ -53,6 +53,12 @@ class AuthController extends BaseController
             return redirect()->back()->withInput()->with('error', '密碼錯誤');
         }
 
+        // 角色未設定時沿用舊的 is_admin 判斷，確保升級前建立的帳號仍能登入
+        $role = (string) ($user['u_role'] ?? '');
+        if ($role === '' || ! isset(\Config\Permission::ROLES[$role])) {
+            $role = ! empty($user['u_is_admin']) ? 'admin' : 'readonly';
+        }
+
         // 寫入 Session
         $session = session();
         $session->set([
@@ -60,6 +66,7 @@ class AuthController extends BaseController
             'username'   => $user['u_username'],
             'displayName'=> $user['u_name'],
             'isAdmin'    => (bool) ($user['u_is_admin'] ?? false),
+            'role'       => $role,
             'isLoggedIn' => true,
         ]);
 

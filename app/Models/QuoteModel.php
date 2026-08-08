@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class QuoteModel extends Model
+class QuoteModel extends AuditedModel
 {
     protected $table = 'quotes';
     protected $primaryKey = 'q_id';

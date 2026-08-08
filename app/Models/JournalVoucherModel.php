@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class JournalVoucherModel extends Model
+class JournalVoucherModel extends AuditedModel
 {
     protected $table = 'journal_vouchers';
     protected $primaryKey = 'jv_id';

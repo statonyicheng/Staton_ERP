@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class BatchModel extends Model
+class BatchModel extends AuditedModel
 {
     protected $table = 'batches';
     protected $primaryKey = 'b_id';

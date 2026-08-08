@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class PurchaseOrderModel extends Model
+class PurchaseOrderModel extends AuditedModel
 {
     protected $table = 'purchase_orders';
     protected $primaryKey = 'po_id';

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class TransactionModel extends Model
+class TransactionModel extends AuditedModel
 {
     protected $table = 'gl_transactions';
     protected $primaryKey = 't_id';

@@ -287,6 +287,9 @@ $routes->group('fs', function ($routes) {
     $routes->get('equity', 'FinancialStatementController::equity');
 });
 
+// ===== 操作紀錄（稽核軌跡；僅供檢視，不提供任何寫入端點）=====
+$routes->get('audit-log', 'AuditLogController::index');
+
 // ===== 匯出（Excel / PDF）=====
 $routes->group('export', function ($routes) {
     $routes->get('xlsx/(:segment)', 'ExportController::xlsx/$1');

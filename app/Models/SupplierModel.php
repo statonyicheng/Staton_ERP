@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class SupplierModel extends Model
+class SupplierModel extends AuditedModel
 {
     protected $table = 'suppliers';
     protected $primaryKey = 's_id';

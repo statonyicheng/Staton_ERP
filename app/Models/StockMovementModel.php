@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class StockMovementModel extends Model
+class StockMovementModel extends AuditedModel
 {
     protected $table = 'stock_movements';
     protected $primaryKey = 'sm_id';

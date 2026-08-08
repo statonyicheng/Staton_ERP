@@ -49,11 +49,13 @@
                                     <td><strong><?= esc($user['u_username']) ?></strong></td>
                                     <td><?= esc($user['u_name']) ?></td>
                                     <td>
-                                        <?php if (! empty($user['u_is_admin'])) : ?>
-                                            <span class="badge bg-danger">管理員</span>
-                                        <?php else : ?>
-                                            <span class="badge bg-secondary">一般使用者</span>
-                                        <?php endif; ?>
+                                        <?php
+                                        $r = $user['u_role'] ?? (! empty($user['u_is_admin']) ? 'admin' : 'readonly');
+                                        $badge = ['admin' => 'bg-danger', 'accounting' => 'bg-primary',
+                                                  'sales' => 'bg-success', 'purchasing' => 'bg-warning text-dark',
+                                                  'readonly' => 'bg-secondary'][$r] ?? 'bg-secondary';
+                                        ?>
+                                        <span class="badge <?= $badge ?>"><?= esc(\Config\Permission::ROLES[$r] ?? $r) ?></span>
                                     </td>
                                     <td><small class="text-muted"><?= esc($user['u_created_at']) ?></small></td>
                                     <td><small class="text-muted"><?= esc($user['u_updated_at']) ?></small></td>

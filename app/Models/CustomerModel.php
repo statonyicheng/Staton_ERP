@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class CustomerModel extends Model
+class CustomerModel extends AuditedModel
 {
     protected $table = 'customers';
     protected $primaryKey = 'c_id';

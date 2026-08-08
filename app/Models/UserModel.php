@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class UserModel extends Model
+class UserModel extends AuditedModel
 {
     protected $table            = 'users';
     protected $primaryKey       = 'u_id';
@@ -14,6 +14,7 @@ class UserModel extends Model
         'u_password',
         'u_name',
         'u_is_admin',
+        'u_role',
     ];
     protected $useTimestamps    = true;
     protected $createdField     = 'u_created_at';

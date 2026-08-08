@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
+use App\Models\AuditedModel;
 
-class WarehouseModel extends Model
+class WarehouseModel extends AuditedModel
 {
     protected $table = 'warehouses';
     protected $primaryKey = 'w_id';

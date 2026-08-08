@@ -73,9 +73,26 @@
                     </div>
                 </div>
 
-                <div class="form-check form-switch mb-4">
-                    <input class="form-check-input" type="checkbox" role="switch" id="u_is_admin" name="u_is_admin" value="1" <?= old('u_is_admin', $user['u_is_admin'] ?? 0) ? 'checked' : '' ?>>
-                    <label class="form-check-label" for="u_is_admin">設定為管理員</label>
+                <?php
+                $currentRole = old('u_role', $user['u_role'] ?? (!empty($user['u_is_admin']) ? 'admin' : 'readonly'));
+                $roleHints = [
+                    'admin'      => '全部模組可讀可寫，含使用者管理與操作紀錄',
+                    'accounting' => '帳務、報表、應收應付、發票可異動；營運單據唯讀',
+                    'sales'      => '客戶、報價、訂單、出貨可異動；看得到庫存與應收，進不去帳務',
+                    'purchasing' => '採購、進貨、庫存、生產可異動；應付唯讀，不能付款',
+                    'readonly'   => '所有模組唯讀，不能做任何異動（適合老闆、會計師、外部稽核）',
+                ];
+                ?>
+                <div class="mb-4">
+                    <label for="u_role" class="form-label">角色權限 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="u_role" name="u_role" required
+                            onchange="document.getElementById('roleHint').textContent = this.selectedOptions[0].dataset.hint || '';">
+                        <?php foreach (\Config\Permission::ROLES as $code => $label): ?>
+                            <option value="<?= esc($code) ?>" data-hint="<?= esc($roleHints[$code] ?? '') ?>"
+                                <?= $currentRole === $code ? 'selected' : '' ?>><?= esc($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-text" id="roleHint"><?= esc($roleHints[$currentRole] ?? '') ?></div>
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">
