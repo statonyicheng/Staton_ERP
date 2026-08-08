@@ -100,33 +100,6 @@ $productCategories = $productCategories ?? [];
         z-index: 10;
     }
 
-    /* 圖片選擇區樣式 */
-    .image-selector-container {
-        padding: 0.5rem;
-        background-color: #f8f9fa;
-        border-radius: 0.25rem;
-        margin-top: 0.5rem;
-    }
-
-    .image-grid {
-        max-height: 200px;
-        overflow-y: auto;
-    }
-
-    .image-item {
-        padding: 0.25rem;
-        border-radius: 0.25rem;
-        transition: background-color 0.2s;
-    }
-
-    .image-item:hover {
-        background-color: #e9ecef;
-    }
-
-    .image-item input[type="radio"]:checked + div {
-        border: 2px solid #0d6efd !important;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
 </style>
 
 <div class="container-fluid mt-4">
