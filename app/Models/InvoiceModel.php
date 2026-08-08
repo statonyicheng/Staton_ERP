@@ -35,9 +35,7 @@ class InvoiceModel extends Model
     /** 產生發票號碼 AA00000001（2 碼字軌 + 8 碼流水） */
     public function generateNumber(): string
     {
-        $last = $this->orderBy('inv_id', 'DESC')->first();
-        $next = 1;
-        if ($last && preg_match('/(\d+)$/', $last['inv_number'], $m)) $next = (int) $m[1] + 1;
-        return 'AA' . str_pad((string) $next, 8, '0', STR_PAD_LEFT);
+        // 發票號碼不分期、連號；原子取號避免重複（重複發票號碼會有稅務問題）
+        return \App\Libraries\DocumentNumber::serial('INV', 'AA', 8);
     }
 }

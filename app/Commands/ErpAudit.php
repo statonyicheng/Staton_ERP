@@ -41,12 +41,15 @@ class ErpAudit extends BaseCommand
         $this->checkWorkOrderStock();
         $this->checkShippedQty();
 
-        $this->section('三、應收 / 應付 / 收付款');
+        $this->section('三、單號唯一性防護');
+        $this->checkDocNoUnique();
+
+        $this->section('四、應收 / 應付 / 收付款');
         $this->checkArAp('payables', 'ap', '應付');
         $this->checkArAp('receivables', 'ar', '應收');
         $this->checkSettlementTie();
 
-        $this->section('四、會計報表勾稽');
+        $this->section('五、會計報表勾稽');
         $this->checkPnlTie();
         $this->checkCashflowTie();
         $this->checkLedgerTie();
@@ -182,7 +185,75 @@ class ErpAudit extends BaseCommand
         $this->result('訂單已出貨量 = 出貨明細加總', empty($bad), $bad, count($rows) . ' 筆訂單明細一致');
     }
 
-    // ===================== 三、應收 / 應付 =====================
+    // ===================== 三、單號唯一性 =====================
+
+    /**
+     * 多人同時開單時單號不可重複。三道防線都要在：
+     * 1) 資料庫 UNIQUE 索引  2) 實際無重複值  3) 計數器不低於既有最大號（否則新號會撞舊號）
+     */
+    private function checkDocNoUnique(): void
+    {
+        $targets = [
+            ['purchase_orders', 'po_no', 'PO'], ['journal_vouchers', 'jv_no', 'JV'],
+            ['payables', 'ap_no', 'AP'], ['receivables', 'ar_no', 'AR'],
+            ['settlements', 'st_no', null], ['work_orders', 'wo_no', 'WO'],
+            ['purchase_requisitions', 'pr_no', 'PR'], ['invoices', 'inv_number', 'INV'],
+        ];
+
+        // 1) UNIQUE 索引
+        $missing = [];
+        foreach ($targets as [$table, $col]) {
+            $c = (int) $this->db->query(
+                "SELECT COUNT(*) c FROM information_schema.statistics
+                 WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? AND non_unique = 0",
+                [$table, 'uniq_' . $col]
+            )->getRow()->c;
+            if ($c === 0) $missing[] = "{$table}.{$col} 缺少 UNIQUE 索引";
+        }
+        $this->result('單號欄位皆有 UNIQUE 索引', empty($missing), $missing,
+            count($targets) . ' 個單號欄位皆受資料庫層保護');
+
+        // 2) 實際重複值
+        $dups = [];
+        foreach ($targets as [$table, $col]) {
+            $rows = $this->db->query(
+                "SELECT `{$col}` v, COUNT(*) n FROM `{$table}` GROUP BY `{$col}` HAVING n > 1"
+            )->getResultArray();
+            foreach ($rows as $r) $dups[] = "{$table}：{$r['v']} 出現 {$r['n']} 次";
+        }
+        $this->result('無重複單號', empty($dups), $dups, '所有單據單號皆唯一');
+
+        // 3) 計數器 vs 既有最大號
+        if (!$this->db->tableExists('document_sequences')) {
+            $this->info('單號計數器', 'document_sequences 尚未建立');
+            return;
+        }
+        $behind = [];
+        foreach ($targets as [$table, $col]) {
+            $rows = $this->db->query("SELECT `{$col}` v FROM `{$table}`")->getResultArray();
+            foreach ($rows as $r) {
+                $no = (string) $r['v'];
+                if (preg_match('/^([A-Z]+)(\d{8})-(\d+)$/', $no, $m)) {
+                    [$scope, $period, $n] = [$m[1], $m[2], (int) $m[3]];
+                } elseif (preg_match('/^([A-Z]{2})(\d+)$/', $no, $m)) {
+                    [$scope, $period, $n] = ['INV', '', (int) $m[2]];
+                } else {
+                    continue;
+                }
+                $cur = $this->db->query(
+                    'SELECT ds_last_no FROM document_sequences WHERE ds_scope = ? AND ds_period = ?',
+                    [$scope, $period]
+                )->getRow();
+                if (!$cur || (int) $cur->ds_last_no < $n) {
+                    $behind[] = "{$scope}/{$period}：計數器 " . ($cur ? $cur->ds_last_no : '不存在') . "，既有最大 {$n}";
+                }
+            }
+        }
+        $behind = array_values(array_unique($behind));
+        $this->result('單號計數器不低於既有最大號', empty($behind), $behind, '新單號不會與既有單號相撞');
+    }
+
+    // ===================== 四、應收 / 應付 =====================
 
     private function checkArAp(string $table, string $p, string $label): void
     {

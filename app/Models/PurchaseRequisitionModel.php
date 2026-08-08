@@ -47,11 +47,7 @@ class PurchaseRequisitionModel extends Model
 
     public function generateNo(?string $date = null): string
     {
-        $date = $date ?: date('Y-m-d');
-        $prefix = 'PR' . date('Ymd', strtotime($date)) . '-';
-        $last = $this->like('pr_no', $prefix, 'after')->orderBy('pr_id', 'DESC')->first();
-        $next = 1;
-        if ($last && preg_match('/-(\d+)$/', $last['pr_no'], $m)) $next = (int) $m[1] + 1;
-        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        // 原子取號，多人同時開單也不會重號（見 App\Libraries\DocumentNumber）
+        return \App\Libraries\DocumentNumber::daily('PR', $date);
     }
 }

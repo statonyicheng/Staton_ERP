@@ -56,12 +56,8 @@ class ReceivableModel extends Model
 
     public function generateNo(?string $date = null): string
     {
-        $date = $date ?: date('Y-m-d');
-        $prefix = 'AR' . date('Ymd', strtotime($date)) . '-';
-        $last = $this->like('ar_no', $prefix, 'after')->orderBy('ar_id', 'DESC')->first();
-        $next = 1;
-        if ($last && preg_match('/-(\d+)$/', $last['ar_no'], $m)) $next = (int) $m[1] + 1;
-        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        // 原子取號，多人同時開單也不會重號（見 App\Libraries\DocumentNumber）
+        return \App\Libraries\DocumentNumber::daily('AR', $date);
     }
 
     /** 從未取消的訂單產生應收憑單 */

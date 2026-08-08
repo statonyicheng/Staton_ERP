@@ -76,13 +76,7 @@ class PurchaseOrderModel extends Model
     /** 產生採購單號 PO20260807-001 */
     public function generateNo(?string $date = null): string
     {
-        $date = $date ?: date('Y-m-d');
-        $prefix = 'PO' . date('Ymd', strtotime($date)) . '-';
-        $last = $this->like('po_no', $prefix, 'after')->orderBy('po_id', 'DESC')->first();
-        $next = 1;
-        if ($last && preg_match('/-(\d+)$/', $last['po_no'], $m)) {
-            $next = (int) $m[1] + 1;
-        }
-        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        // 原子取號，多人同時開單也不會重號（見 App\Libraries\DocumentNumber）
+        return \App\Libraries\DocumentNumber::daily('PO', $date);
     }
 }
