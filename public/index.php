@@ -48,7 +48,9 @@ if (getcwd() . DIRECTORY_SEPARATOR !== FCPATH) {
 
 // LOAD OUR PATHS CONFIG FILE
 // This is the line that might need to be changed, depending on your folder structure.
-require FCPATH . '/app/Config/Paths.php';
+// 標準 CI4 佈局：front controller 在 public/，應用程式在其上一層（網站根目錄之外，
+// 這樣 .env / app / writable / vendor 都不會被瀏覽器直接讀取）
+require FCPATH . '../app/Config/Paths.php';
 // ^^^ Change this line if you move your application folder
 
 $paths = new Paths();
