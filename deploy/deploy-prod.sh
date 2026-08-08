@@ -18,18 +18,22 @@ APP_USER="www-data"
 say() { echo -e "\n\033[1;34m==> $*\033[0m"; }
 ok()  { echo -e "    \033[0;32m✓\033[0m $*"; }
 
+# 程式碼歸 www-data，git 一律以該身分執行（用 root 會被 git 的 safe.directory 擋下）
+pgit() { sudo -u "${APP_USER}" git -C "${PROD_DIR}" "$@"; }
+sgit() { sudo -u "${APP_USER}" git -C "${STAGING_DIR}" "$@"; }
+
 if [[ $EUID -ne 0 ]]; then echo "請用 sudo 執行"; exit 1; fi
 
 # ---------------------------------------------------------------- 出發點
 say "目前版本"
-git -C "${PROD_DIR}" log --oneline -1
-BEFORE="$(git -C "${PROD_DIR}" rev-parse HEAD)"
+pgit log --oneline -1
+BEFORE="$(pgit rev-parse HEAD)"
 
 if [[ -d "${STAGING_DIR}/.git" ]]; then
-  STAGING_REV="$(git -C "${STAGING_DIR}" rev-parse HEAD)"
-  echo "    測試站版本：$(git -C "${STAGING_DIR}" log --oneline -1)"
-  git -C "${PROD_DIR}" fetch --quiet origin
-  REMOTE="$(git -C "${PROD_DIR}" rev-parse origin/main)"
+  STAGING_REV="$(sgit rev-parse HEAD)"
+  echo "    測試站版本：$(sgit log --oneline -1)"
+  pgit fetch --quiet origin
+  REMOTE="$(pgit rev-parse origin/main)"
   if [[ "${STAGING_REV}" != "${REMOTE}" ]]; then
     echo -e "\n\033[1;33m注意：測試站的版本和 origin/main 不一樣。\033[0m"
     echo "    正式站即將部署的是 origin/main，也就是沒有在測試站驗證過的版本。"
@@ -47,8 +51,8 @@ ok "備份完成"
 
 # ---------------------------------------------------------------- 程式碼
 say "更新程式碼"
-sudo -u "${APP_USER}" git -C "${PROD_DIR}" pull --ff-only
-git -C "${PROD_DIR}" log --oneline -1
+pgit pull --ff-only
+pgit log --oneline -1
 ok "已更新"
 
 # ---------------------------------------------------------------- 相依套件

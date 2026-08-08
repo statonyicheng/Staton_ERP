@@ -31,9 +31,11 @@ if [[ $EUID -ne 0 ]]; then echo "請用 sudo 執行"; exit 1; fi
 say "取得程式碼"
 if [[ ! -d "${STAGING_DIR}/.git" ]]; then
   git clone "${REPO}" "${STAGING_DIR}"
+  chown -R "${APP_USER}:${APP_USER}" "${STAGING_DIR}"
   ok "已 clone 到 ${STAGING_DIR}"
 else
-  git -C "${STAGING_DIR}" pull --ff-only
+  # 程式碼歸 www-data，用 root 跑 git 會被 safe.directory 擋下
+  sudo -u "${APP_USER}" git -C "${STAGING_DIR}" pull --ff-only
   ok "已更新到最新版"
 fi
 
