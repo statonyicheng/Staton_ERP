@@ -1,0 +1,355 @@
+/* ============================================================
+   仕坦登企業管理顧問有限公司 · STATON ERP  品牌主題
+   品牌色：深藏青 #000e2f（主 60%）／中性灰白（30%）／金 #f4b702（點綴 10%）
+   字體：思源宋體 Noto Serif TC（中英數統一）
+   調性：沉穩東方現代主義、高級克制
+   ============================================================ */
+
+:root {
+    --navy: #000e2f;
+    --navy-2: #0a1c44;
+    --navy-3: #13264f;
+    --gold: #f4b702;
+    --gold-600: #d99e00;
+    --ink: #1c2230;
+    --muted: #6b7280;
+    --line: #e6e8ee;
+    --bg: #f5f6f8;
+    --card: #ffffff;
+
+    /* 覆蓋 Bootstrap 主色為藏青，讓所有 primary 元件自動套用 */
+    --bs-primary: #000e2f;
+    --bs-primary-rgb: 0, 14, 47;
+    --bs-primary-hover: #0a1c44;
+
+    --bs-link-color: #000e2f;
+    --bs-link-color-rgb: 0, 14, 47;
+    --bs-link-hover-color: #d99e00;
+
+    --bs-body-font-family: "Noto Serif TC", "Source Han Serif TC", "思源宋體", "Songti TC", serif;
+    --bs-body-color: #1c2230;
+}
+
+/* ===== 全域字體與底色 ===== */
+html, body {
+    font-family: "Noto Serif TC", "Source Han Serif TC", "思源宋體", "Songti TC", serif;
+    color: var(--ink);
+}
+
+/* 固定式 ERP 外殼：整頁不捲動，改由側邊欄與內容區各自捲動，
+   避免側邊欄藏青底在長頁面下方斷掉而露出大片空白 */
+body {
+    display: flex;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    flex-direction: column;
+    background-color: var(--bg);
+    letter-spacing: 0.2px;
+}
+
+h1, h2, h3, h4, h5, h6,
+.navbar-brand, .btn, .form-label, .list-group-item, .table {
+    font-family: "Noto Serif TC", "Source Han Serif TC", "思源宋體", serif;
+}
+
+/* 頁面主標題：藏青字 + 金色短底線 */
+#page-content-wrapper h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--navy);
+    padding-bottom: .6rem;
+    margin-bottom: 1.2rem;
+    position: relative;
+}
+#page-content-wrapper h1::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 52px;
+    height: 3px;
+    background: var(--gold);
+    border-radius: 2px;
+}
+
+/* ===== 基本布局 ===== */
+#wrapper {
+    display: flex;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;          /* 讓子元素的 overflow 生效（flex 子項預設 min-height:auto） */
+    transition: all 0.3s ease-in-out;
+}
+
+#page-content-wrapper {
+    flex: 1 1 auto;
+    padding: 24px 28px;
+    min-width: 0;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+#page-content-wrapper::-webkit-scrollbar { width: 10px; }
+#page-content-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(0, 14, 47, 0.18);
+    border-radius: 5px;
+    border: 3px solid var(--bg);
+}
+#page-content-wrapper::-webkit-scrollbar-thumb:hover { background: rgba(0, 14, 47, 0.3); }
+
+/* ===== 導覽列（頂部）：藏青底、白字、金點綴 ===== */
+.navbar-bg-color {
+    background-color: var(--navy) !important;
+    border-bottom: 2px solid var(--gold);
+    box-shadow: 0 2px 12px rgba(0, 14, 47, 0.18);
+    flex: 0 0 auto;         /* 固定在頂部，不隨內容捲動 */
+    z-index: 1030;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: #ffffff !important;
+    font-size: 1.25rem !important;
+    line-height: 1.1;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+}
+.navbar-brand .brand-mark {
+    display: inline-block;
+    width: 10px;
+    height: 22px;
+    background: var(--gold);
+    margin-right: 12px;
+    border-radius: 2px;
+}
+.navbar-brand small {
+    display: block;
+    font-size: .68rem;
+    letter-spacing: 3px;
+    color: var(--gold);
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.navbar-bg-color #sidebarToggle {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+}
+.navbar-bg-color #sidebarToggle .navbar-toggler-icon {
+    filter: invert(1);
+}
+.navbar-bg-color .fw-semibold { color: #fff; }
+
+.navbar-bg-color .btn-outline-danger {
+    color: var(--gold);
+    border-color: rgba(244, 183, 2, 0.6);
+}
+.navbar-bg-color .btn-outline-danger:hover {
+    background-color: var(--gold);
+    border-color: var(--gold);
+    color: var(--navy);
+}
+
+/* ===== 側邊欄：藏青主色（60%） ===== */
+#sidebar-wrapper {
+    width: 260px;
+    background: var(--navy);
+    color: #fff;
+    transition: all 0.3s ease-in-out;
+    flex-shrink: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: inset -1px 0 0 rgba(255,255,255,0.04);
+    height: 100%;           /* 撐滿可視區，藏青底不再中途斷掉 */
+}
+#sidebar-wrapper::-webkit-scrollbar { width: 6px; }
+#sidebar-wrapper::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+#wrapper.toggled #sidebar-wrapper { width: 0; }
+
+.sidebar-heading {
+    padding: 1.1rem 1.25rem 0.5rem 1.25rem;
+    font-size: 0.72rem;
+    color: var(--gold);
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* 模組群組（可展開） */
+.erp-group-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    margin: 2px 10px;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.erp-group-toggle:hover { background: rgba(255,255,255,0.06); }
+.erp-group-toggle .group-label { display: flex; align-items: center; gap: 10px; }
+.erp-group-toggle .group-label i { color: var(--gold); width: 18px; text-align: center; }
+.erp-group-toggle .caret { transition: transform 0.25s ease; font-size: .8rem; opacity: .7; }
+.erp-group-toggle[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.erp-group-toggle[aria-expanded="true"] { color: var(--gold); }
+
+/* 子項目 */
+.list-group { padding: 0 4px; }
+
+.list-group-item {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.72);
+    border: none;
+    padding: 10px 18px 10px 30px;
+    transition: all 0.2s ease;
+    margin: 1px 8px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    border-left: 3px solid transparent;
+}
+.list-group-item:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+    color: #fff;
+    border-left-color: var(--gold);
+}
+.list-group-item.active,
+.list-group-item[aria-current="page"] {
+    background-color: rgba(244, 183, 2, 0.12);
+    color: #fff;
+    border-left-color: var(--gold);
+}
+.list-group-item i {
+    margin-right: 9px;
+    width: 16px;
+    text-align: center;
+    color: rgba(244, 183, 2, 0.85);
+}
+/* 建置中模組標記 */
+.list-group-item .soon {
+    float: right;
+    font-size: .62rem;
+    letter-spacing: 1px;
+    color: var(--navy);
+    background: rgba(244, 183, 2, 0.85);
+    border-radius: 10px;
+    padding: 1px 7px;
+    margin-top: 2px;
+}
+
+/* ===== 響應式 ===== */
+@media (max-width: 768px) {
+    #sidebar-wrapper { width: 0; }
+    #wrapper.toggled #sidebar-wrapper { width: 260px; }
+}
+
+/* ===== 列印：解除固定外殼，讓報表可整份印出 ===== */
+@media print {
+    body { display: block; height: auto; max-height: none; overflow: visible; background: #fff; }
+    #wrapper { display: block; }
+    #sidebar-wrapper, .navbar-bg-color { display: none !important; }
+    #page-content-wrapper { height: auto; overflow: visible; padding: 0; }
+}
+
+/* ===== 卡片 ===== */
+.card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 14, 47, 0.05);
+}
+
+/* ===== 按鈕 ===== */
+.btn { border-radius: 8px; font-weight: 500; letter-spacing: .5px; }
+
+.btn-primary {
+    background-color: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--navy-2);
+    border-color: var(--navy-2);
+    color: #fff;
+}
+.btn-outline-primary {
+    color: var(--navy);
+    border-color: var(--navy);
+}
+.btn-outline-primary:hover {
+    background-color: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+}
+/* 金色強調按鈕（重點 CTA，克制使用） */
+.btn-gold, .btn-accent {
+    background-color: var(--gold);
+    border-color: var(--gold);
+    color: var(--navy);
+    font-weight: 600;
+}
+.btn-gold:hover, .btn-accent:hover {
+    background-color: var(--gold-600);
+    border-color: var(--gold-600);
+    color: var(--navy);
+}
+
+/* info / danger 操作按鈕改為藏青灰調，維持克制 */
+.btn-outline-info {
+    color: var(--navy-2);
+    border-color: #c3c8d4;
+}
+.btn-outline-info:hover {
+    background-color: var(--navy-2);
+    border-color: var(--navy-2);
+    color: #fff;
+}
+.btn-outline-danger { color: #b02a37; border-color: #d9a2a7; }
+.btn-outline-danger:hover { background-color: #b02a37; border-color: #b02a37; color: #fff; }
+
+/* ===== 表格 ===== */
+.table { --bs-table-color: var(--ink); }
+.table-light th,
+.table thead th {
+    background-color: #eef1f6 !important;
+    color: var(--navy) !important;
+    border-color: var(--line) !important;
+    font-weight: 600;
+    letter-spacing: .5px;
+}
+
+/* ===== 表單聚焦 ===== */
+.form-control:focus, .form-select:focus {
+    border-color: var(--navy-2);
+    box-shadow: 0 0 0 0.2rem rgba(0, 14, 47, 0.12);
+}
+
+/* ===== 連結 ===== */
+a { color: var(--navy); text-decoration: none; }
+a:hover { color: var(--gold-600); }
+
+/* ===== badge ===== */
+.badge.bg-primary { background-color: var(--navy) !important; }
+.badge.bg-gold { background-color: var(--gold) !important; color: var(--navy) !important; }
+
+/* ===== 相容：舊 hover 子選單（保留） ===== */
+.nav-dropdown { position: relative; }
+.dropdown-menu-custom {
+    position: fixed; left: 260px; background: var(--navy-2);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: .5rem;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.3); min-width: 220px;
+    z-index: 1050; display: none; padding: .5rem 0;
+}
+.nav-dropdown:hover .dropdown-menu-custom { display: block; }
+.dropdown-item-custom {
+    display: block; width: 100%; padding: .7rem 1.25rem; color: rgba(255,255,255,.8);
+    text-decoration: none; white-space: nowrap; transition: all .2s ease;
+}
+.dropdown-item-custom:hover { color: var(--navy); background-color: var(--gold); }
+.dropdown-item-custom i { margin-right: .75rem; width: 16px; text-align: center; }

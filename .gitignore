@@ -1,0 +1,62 @@
+# ============================================================
+# 仕坦登 ERP · CodeIgniter 4
+# ============================================================
+
+# ---- 機密設定：絕對不進版控 ----
+.env
+.env.*
+!env
+
+# ---- 相依套件：用 composer.lock 重現即可 ----
+# 還原方式： php composer.phar install
+/vendor/
+/composer.phar
+
+# ---- 使用者資料，不是程式碼（靠備份機制保護，不是靠 Git）----
+# 商品圖約 537MB，進版控會讓 repo 無法使用
+/uploads/
+/public/uploads/
+
+# ---- 公司內帳原始檔：含真實財務資料，不進版控 ----
+/writable/imports/
+
+# ---- CI4 執行期產出 ----
+/writable/cache/*
+/writable/logs/*
+/writable/session/*
+/writable/debugbar/*
+/writable/exports/*
+/writable/mpdf/*
+/writable/uploads/*
+!/writable/**/index.html
+!/writable/**/.gitkeep
+
+# ---- 原始壓縮檔遺留的 WAMP/舊版垃圾（保留在磁碟，但不進版控）----
+/wampthemes/
+/wamplangues/
+/build/
+/builds/
+/index_org.php
+/add_vhost.php
+/test_sockets.php
+/testmysql.php
+/desktop.ini
+
+# ---- 外來 repo 備份 ----
+/.git.foreign-guoding-steel-backup/
+
+# ---- 測試產出 ----
+/tests/coverage/
+/phpunit.xml
+
+# ---- 編輯器 / 作業系統 ----
+/.idea/
+/.vscode/
+/.cursor/
+*.iml
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*~
+~$*
+php_errors.log
