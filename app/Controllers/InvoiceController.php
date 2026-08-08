@@ -36,7 +36,10 @@ class InvoiceController extends BaseController
 
     public function create()
     {
-        return view('invoice/form', ['isEdit' => false, 'customers' => $this->customers(), 'defaultNo' => $this->invModel->generateNumber()]);
+        // 發票號碼「存檔時」才配發，不在開啟表單時取號。
+        // 其他單據（採購單/製令/傳票…）是開表單即取號，兩人同時開單才不會撞號；
+        // 但統一發票號碼必須連續，開了表單卻沒存檔就會留下空號，而空號依規定要作廢申報。
+        return view('invoice/form', ['isEdit' => false, 'customers' => $this->customers(), 'defaultNo' => '']);
     }
 
     public function store()

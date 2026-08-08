@@ -11,7 +11,12 @@
     <form action="<?= $isEdit ? url_to('InvoiceController::update', $data['inv_id']) : url_to('InvoiceController::store') ?>" method="post">
         <div class="row">
             <div class="col-md-3 mb-3"><label class="form-label">發票號碼</label>
-                <input type="text" class="form-control" name="inv_number" value="<?= esc($isEdit ? ($data['inv_number'] ?? '') : ($defaultNo ?? '')) ?>" <?= $isEdit?'readonly':'' ?>></div>
+                <input type="text" class="form-control" name="inv_number" value="<?= esc($isEdit ? ($data['inv_number'] ?? '') : ($defaultNo ?? '')) ?>" <?= $isEdit?'readonly':'' ?>
+                       placeholder="<?= $isEdit ? '' : '存檔後自動配發' ?>">
+                <?php if (! $isEdit): ?>
+                    <div class="form-text">留白即可，存檔當下才配發號碼，確保連續、不留需作廢申報的空號。</div>
+                <?php endif; ?>
+            </div>
             <div class="col-md-3 mb-3"><label class="form-label">開立日期</label>
                 <input type="date" class="form-control" name="inv_date" value="<?= esc($data['inv_date'] ?? date('Y-m-d')) ?>"></div>
             <div class="col-md-6 mb-3"><label class="form-label">客戶</label>
