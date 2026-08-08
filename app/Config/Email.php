@@ -6,6 +6,9 @@ use CodeIgniter\Config\BaseConfig;
 
 class Email extends BaseConfig
 {
+    // ── CodeIgniter 4.7 新增的設定；缺少時會在執行期噴 Undefined property ──
+    public string $SMTPAuthMethod = 'login';
+
     public string $fromEmail  = '';
     public string $fromName   = '';
     public string $recipients = '';

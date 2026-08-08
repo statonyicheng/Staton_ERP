@@ -23,6 +23,13 @@ use CodeIgniter\Debug\Toolbar\Collectors\Views;
  */
 class Toolbar extends BaseConfig
 {
+    // ── CodeIgniter 4.7 新增的設定；缺少時會在執行期噴 Undefined property ──
+    public array $disableOnHeaders = [
+        'X-Requested-With' => 'xmlhttprequest',
+        'HX-Request'       => 'true',
+        'X-Up-Version'     => null,
+    ];
+
     /**
      * --------------------------------------------------------------------------
      * Toolbar Collectors

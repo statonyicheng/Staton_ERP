@@ -12,6 +12,9 @@ use CodeIgniter\Config\BaseConfig;
  */
 class Encryption extends BaseConfig
 {
+    // ── CodeIgniter 4.7 新增的設定；缺少時會在執行期噴 Undefined property ──
+    public array|string $previousKeys = '';
+
     /**
      * --------------------------------------------------------------------------
      * Encryption Key Starter

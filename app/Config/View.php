@@ -11,6 +11,9 @@ use CodeIgniter\View\ViewDecoratorInterface;
  */
 class View extends BaseView
 {
+    // ── CodeIgniter 4.7 新增的設定；缺少時會在執行期噴 Undefined property ──
+    public string $appOverridesFolder = 'overrides';
+
     /**
      * When false, the view method will clear the data between each
      * call. This keeps your data safe and ensures there is no accidental

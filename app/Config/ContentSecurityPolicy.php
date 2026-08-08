@@ -15,6 +15,19 @@ use CodeIgniter\Config\BaseConfig;
  */
 class ContentSecurityPolicy extends BaseConfig
 {
+    // ── CodeIgniter 4.7 新增的設定；缺少時會在執行期噴 Undefined property ──
+    public ?string $reportTo = null;
+
+    public array|string $scriptSrcElem = 'self';
+
+    public array|string $scriptSrcAttr = 'self';
+
+    public array|string $styleSrcElem = 'self';
+
+    public array|string $styleSrcAttr = 'self';
+
+    public array|string $workerSrc = [];
+
     // -------------------------------------------------------------------------
     // Broadbrush CSP management
     // -------------------------------------------------------------------------

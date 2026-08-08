@@ -18,6 +18,9 @@ use CodeIgniter\Config\Routing as BaseRouting;
  */
 class Routing extends BaseRouting
 {
+    // ── CodeIgniter 4.7 新增的設定；缺少時會在執行期噴 Undefined property ──
+    public bool $useControllerAttributes = true;
+
     /**
      * For Defined Routes.
      * An array of files that contain route definitions.

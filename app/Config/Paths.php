@@ -15,6 +15,9 @@ namespace Config;
  */
 class Paths
 {
+    // ── CodeIgniter 4.7 新增的設定；缺少時會在執行期噴 Undefined property ──
+    public string $envDirectory = __DIR__ . '/../../';
+
     /**
      * ---------------------------------------------------------------
      * SYSTEM FOLDER NAME
