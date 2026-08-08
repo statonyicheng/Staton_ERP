@@ -83,6 +83,9 @@ class FixSalesLineSchema extends Migration
         $this->addMissing('orders', $this->orderFields);
         $this->addMissing('quotes', $this->quoteFields);
 
+        // CI4 會把欄位清單快取在連線上，剛加的欄位不清快取就查不到（fieldExists 會回傳舊答案）
+        $this->db->resetDataCache();
+
         // 聯絡人欄位會被 JOIN，補一個索引（不加外鍵：聯絡人被刪時由程式面容忍 null）
         if ($this->db->fieldExists('o_cc_id', 'orders') && ! $this->indexExists('orders', 'orders_o_cc_id')) {
             $this->db->query('ALTER TABLE `orders` ADD INDEX `orders_o_cc_id` (`o_cc_id`)');
