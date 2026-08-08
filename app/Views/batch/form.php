@@ -13,6 +13,7 @@ if (!function_exists('getFieldClass')) { function getFieldClass($f) { $e = sessi
 
 <div class="card shadow-sm"><div class="card-body p-4">
     <form action="<?= $isEdit ? url_to('BatchController::update', $data['b_id']) : url_to('BatchController::store') ?>" method="post" novalidate>
+        <?= \App\Libraries\EditGuard::field($data['b_updated_at'] ?? null) ?>
         <div class="row">
             <div class="col-md-6 mb-3"><label class="form-label">商品 <span class="text-danger">*</span></label>
                 <select class="form-select <?= getFieldClass('b_p_id') ?>" name="b_p_id" required>

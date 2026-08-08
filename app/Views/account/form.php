@@ -29,6 +29,7 @@ if (!function_exists('getFieldClass')) {
 <div class="card shadow-sm">
     <div class="card-body p-4">
         <form action="<?= $isEdit ? url_to('AccountController::update', $data['ac_id']) : url_to('AccountController::store') ?>" method="post" novalidate>
+        <?= \App\Libraries\EditGuard::field($data['ac_updated_at'] ?? null) ?>
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">科目代號</label>

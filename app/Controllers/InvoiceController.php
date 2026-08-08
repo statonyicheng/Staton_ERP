@@ -71,6 +71,10 @@ class InvoiceController extends BaseController
 
     public function update($id)
     {
+        // 樂觀鎖：這筆資料若在使用者編輯期間被別人改過，就擋下來，不要無聲覆蓋
+        if ($msg = \App\Libraries\EditGuard::check('invoices', 'inv_id', $id, 'inv_updated_at', $this->request->getPost(\App\Libraries\EditGuard::FIELD))) {
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
         if (!$this->invModel->find($id)) return redirect()->to('/invoice')->with('error', '發票不存在');
         $d = $this->request->getPost();
         $amount = (int) ($d['inv_amount'] ?? 0);

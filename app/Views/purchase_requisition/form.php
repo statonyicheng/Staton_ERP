@@ -29,6 +29,7 @@ if (!function_exists('getFieldClass')) {
 <div class="card shadow-sm">
     <div class="card-body p-4">
         <form action="<?= $isEdit ? url_to('PurchaseRequisitionController::update', $data['pr_id']) : url_to('PurchaseRequisitionController::store') ?>" method="post" novalidate>
+        <?= \App\Libraries\EditGuard::field($data['pr_updated_at'] ?? null) ?>
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">請購單號</label>

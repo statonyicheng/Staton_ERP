@@ -10,6 +10,7 @@
 <div class="card shadow-sm">
     <div class="card-body p-4">
         <form action="<?= $isEdit ? url_to('WorkOrderController::update', $data['wo_id']) : url_to('WorkOrderController::store') ?>" method="post">
+        <?= \App\Libraries\EditGuard::field($data['wo_updated_at'] ?? null) ?>
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">製令單號</label>

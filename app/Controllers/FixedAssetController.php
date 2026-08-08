@@ -56,6 +56,10 @@ class FixedAssetController extends BaseController
 
     public function update($id)
     {
+        // 樂觀鎖：這筆資料若在使用者編輯期間被別人改過，就擋下來，不要無聲覆蓋
+        if ($msg = \App\Libraries\EditGuard::check('fixed_assets', 'fa_id', $id, 'fa_updated_at', $this->request->getPost(\App\Libraries\EditGuard::FIELD))) {
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
         if (!$this->assetModel->find($id)) return redirect()->to('/fixed-asset')->with('error', '資產不存在');
         if (!$this->validate($this->assetModel->getValidationRules())) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());

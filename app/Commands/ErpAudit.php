@@ -56,6 +56,7 @@ class ErpAudit extends BaseCommand
         $this->checkJournalBalance();
         $this->checkBalanceSheet();
         $this->checkOpenItem();
+        $this->checkBooks();
 
         CLI::newLine();
         CLI::write(str_repeat('=', 62), 'dark_gray');
@@ -422,6 +423,50 @@ class ErpAudit extends BaseCommand
         foreach ($rows as $r) { $totD += (int) $r['d']; $totC += (int) $r['c']; }
         $this->result('立沖帳已沖金額未超額', empty($bad), $bad,
             count($rows) . ' 筆開放項目（借 ' . number_format($totD) . '／貸 ' . number_format($totC) . '）');
+    }
+
+    /**
+     * 會計三帳簿勾稽：
+     *  日記帳 Σ借 = Σ貸；總分類帳 期末借餘合計 = 貸餘合計；
+     *  明細分類帳每個科目的期末餘額必須等於總分類帳同科目的期末餘額。
+     */
+    private function checkBooks(): void
+    {
+        $books = new \App\Libraries\AccountingBooks();
+        $range = $books->dateRange();
+        [$from, $to] = [$range['min'], $range['max']];
+
+        // 日記帳借貸平衡
+        $j = $books->journal($from, $to);
+        if (!$j) { $this->info('會計帳簿', '目前無傳票分錄，無法驗證'); return; }
+        $jd = $jc = 0;
+        foreach ($j as $r) { $jd += (int) $r['je_debit']; $jc += (int) $r['je_credit']; }
+        $this->result('日記帳 Σ借 = Σ貸', $jd === $jc,
+            $jd === $jc ? [] : ['借 ' . number_format($jd) . ' ≠ 貸 ' . number_format($jc)],
+            count($j) . ' 筆分錄，借貸各 ' . number_format($jd));
+
+        // 總分類帳期末借貸平衡
+        $led = $books->ledger($from, $to);
+        $bd = $bc = 0;
+        foreach ($led as $r) { $r['closing'] > 0 ? $bd += $r['closing'] : $bc += -$r['closing']; }
+        $this->result('總分類帳期末借餘 = 貸餘', $bd === $bc,
+            $bd === $bc ? [] : ['借餘 ' . number_format($bd) . ' ≠ 貸餘 ' . number_format($bc)],
+            count($led) . ' 個科目，借貸餘各 ' . number_format($bd));
+
+        // 明細分類帳 vs 總分類帳
+        $byAcc = [];
+        foreach ($led as $r) $byAcc[$r['ac_id']] = $r['closing'];
+        $bad = [];
+        foreach ($books->detail($from, $to) as $g) {
+            $id = (int) $g['account']['ac_id'];
+            if (!isset($byAcc[$id])) continue;
+            if ($byAcc[$id] !== $g['closing']) {
+                $bad[] = $g['account']['ac_code'] . ' ' . $g['account']['ac_name']
+                       . '：總帳 ' . number_format($byAcc[$id]) . ' ≠ 明細 ' . number_format($g['closing']);
+            }
+        }
+        $this->result('明細分類帳期末餘額 = 總分類帳', empty($bad), $bad,
+            count($byAcc) . ' 個科目逐一核對一致');
     }
 
     // ===================== 輸出 =====================

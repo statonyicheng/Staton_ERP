@@ -29,6 +29,7 @@ if (!function_exists('getFieldClass')) {
 <div class="card shadow-sm">
     <div class="card-body p-4">
         <form action="<?= $isEdit ? url_to('SupplierController::update', $data['s_id']) : url_to('SupplierController::store') ?>" method="post" novalidate>
+        <?= \App\Libraries\EditGuard::field($data['s_updated_at'] ?? null) ?>
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">廠商編號</label>

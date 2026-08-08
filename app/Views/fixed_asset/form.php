@@ -31,6 +31,7 @@ $methods = ['直線法', '定率遞減法', '年數合計法'];
 <div class="card shadow-sm">
     <div class="card-body p-4">
         <form action="<?= $isEdit ? url_to('FixedAssetController::update', $data['fa_id']) : url_to('FixedAssetController::store') ?>" method="post" novalidate>
+        <?= \App\Libraries\EditGuard::field($data['fa_updated_at'] ?? null) ?>
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">資產編號</label>

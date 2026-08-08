@@ -10,6 +10,7 @@
 <div class="card shadow-sm">
     <div class="card-body p-4">
         <form action="<?= $isEdit ? url_to('PayableController::update', $data['ap_id']) : url_to('PayableController::store') ?>" method="post">
+        <?= \App\Libraries\EditGuard::field($data['ap_updated_at'] ?? null) ?>
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">應付單號</label>

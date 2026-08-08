@@ -85,6 +85,10 @@ class WorkOrderController extends BaseController
 
     public function update($id)
     {
+        // 樂觀鎖：這筆資料若在使用者編輯期間被別人改過，就擋下來，不要無聲覆蓋
+        if ($msg = \App\Libraries\EditGuard::check('work_orders', 'wo_id', $id, 'wo_updated_at', $this->request->getPost(\App\Libraries\EditGuard::FIELD))) {
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
         $wo = $this->woModel->find($id);
         if (!$wo) return redirect()->to('/work-order')->with('error', '製令不存在');
         if ($wo['wo_status'] === '已完工') return redirect()->to('/work-order')->with('error', '已完工製令不可修改');

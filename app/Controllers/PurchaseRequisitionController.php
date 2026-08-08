@@ -67,6 +67,10 @@ class PurchaseRequisitionController extends BaseController
 
     public function update($id)
     {
+        // 樂觀鎖：這筆資料若在使用者編輯期間被別人改過，就擋下來，不要無聲覆蓋
+        if ($msg = \App\Libraries\EditGuard::check('purchase_requisitions', 'pr_id', $id, 'pr_updated_at', $this->request->getPost(\App\Libraries\EditGuard::FIELD))) {
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
         if (!$this->prModel->find($id)) return redirect()->to('/purchase-requisition')->with('error', '請購單不存在');
         if (!$this->validate($this->prModel->getValidationRules())) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());

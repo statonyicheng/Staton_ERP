@@ -78,6 +78,10 @@ class PaymentMethodController extends BaseController
 
     public function update($id)
     {
+        // 樂觀鎖：這筆資料若在使用者編輯期間被別人改過，就擋下來，不要無聲覆蓋
+        if ($msg = \App\Libraries\EditGuard::check('payment_methods', 'pm_id', $id, 'pm_updated_at', $this->request->getPost(\App\Libraries\EditGuard::FIELD))) {
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
         $data = $this->paymentMethodModel->find($id);
         if (!$data) {
             return redirect()->to('/payment-method')->with('error', '結帳方式不存在');

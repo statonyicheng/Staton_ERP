@@ -44,8 +44,13 @@ $groups = [
         ['製令管理', 'work-order', 'bi-hammer', false],
         ['批次需求計劃 MRP', 'mrp', 'bi-list-check', false],
     ]],
+    ['id' => 'grpBooks', 'label' => '會計帳簿', 'icon' => 'bi-journals', 'items' => [
+        ['日記帳', 'books/journal', 'bi-journal-text', false],
+        ['總分類帳', 'books/ledger', 'bi-journal-bookmark', false],
+        ['明細分類帳', 'books/detail', 'bi-journal-richtext', false],
+    ]],
     ['id' => 'grpFinance', 'label' => '會計財務', 'icon' => 'bi-bank', 'items' => [
-        ['會計總帳', 'ledger', 'bi-journal-bookmark', false],
+        ['科目彙總（收付制）', 'ledger', 'bi-list-columns', false],
         ['分錄傳票（借貸）', 'journal', 'bi-journal-richtext', false],
         ['交易登錄（收付）', 'transaction', 'bi-journal-text', false],
         ['四階損益分析', 'pnl', 'bi-graph-up', false],

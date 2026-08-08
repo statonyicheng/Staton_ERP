@@ -67,6 +67,10 @@ class SupplierController extends BaseController
 
     public function update($id)
     {
+        // 樂觀鎖：這筆資料若在使用者編輯期間被別人改過，就擋下來，不要無聲覆蓋
+        if ($msg = \App\Libraries\EditGuard::check('suppliers', 's_id', $id, 's_updated_at', $this->request->getPost(\App\Libraries\EditGuard::FIELD))) {
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
         if (!$this->supplierModel->find($id)) return redirect()->to('/supplier')->with('error', '廠商不存在');
         if (!$this->validate($this->supplierModel->getValidationRules())) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());

@@ -287,6 +287,13 @@ $routes->group('fs', function ($routes) {
     $routes->get('equity', 'FinancialStatementController::equity');
 });
 
+// ===== 會計帳簿（日記帳 / 總分類帳 / 明細分類帳；由複式簿記分錄產生，僅供查詢）=====
+$routes->group('books', function ($routes) {
+    $routes->get('journal', 'AccountingBookController::journal');
+    $routes->get('ledger', 'AccountingBookController::ledger');
+    $routes->get('detail', 'AccountingBookController::detail');
+});
+
 // ===== 操作紀錄（稽核軌跡；僅供檢視，不提供任何寫入端點）=====
 $routes->get('audit-log', 'AuditLogController::index');
 

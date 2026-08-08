@@ -10,6 +10,7 @@
 <div class="card shadow-sm">
     <div class="card-body p-4">
         <form action="<?= $isEdit ? url_to('ReceivableController::update', $data['ar_id']) : url_to('ReceivableController::store') ?>" method="post">
+        <?= \App\Libraries\EditGuard::field($data['ar_updated_at'] ?? null) ?>
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">應收單號</label>

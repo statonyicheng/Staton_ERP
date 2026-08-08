@@ -47,6 +47,7 @@ function getFieldClass($fieldName)
     <div class="card shadow-sm">
         <div class="card-body p-4">
             <form id="paymentMethodForm" action="<?= $isEdit ? url_to('PaymentMethodController::update', $data['pm_id']) : url_to('PaymentMethodController::store') ?>" method="post" novalidate>
+        <?= \App\Libraries\EditGuard::field($data['pm_updated_at'] ?? null) ?>
                 <!-- 基本資訊 -->
                 <div class="mb-4">
                     <h5 class="border-bottom pb-2 mb-3">

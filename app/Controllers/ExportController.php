@@ -141,6 +141,25 @@ class ExportController extends BaseController
         return $range;
     }
 
+    /** 會計帳簿共用的期間 / 科目條件（與畫面上的篩選一致），記憶化避免重複查詢 */
+    private function bookFilters(): array
+    {
+        static $range = null;
+        if ($range === null) $range = (new \App\Libraries\AccountingBooks())->dateRange();
+
+        return [
+            $this->get('from', $range['min']),
+            $this->get('to', $range['max']),
+            (int) $this->get('ac_id', 0) ?: null,
+        ];
+    }
+
+    private function bookSubtitle(): string
+    {
+        [$from, $to, $acId] = $this->bookFilters();
+        return "期間 {$from} ~ {$to}" . ($acId ? '（單一科目）' : '') . '　依複式簿記分錄編製';
+    }
+
     /** LIKE 關鍵字條件（無關鍵字時回傳恆真條件） */
     private function kw(array $fields): array
     {
@@ -630,6 +649,84 @@ class ExportController extends BaseController
                 'note' => '共用人事與管理費用歸於 M-0；預算標準：一階毛利率 65%、二階費用率 25%、四階毛利率 12.5%。',
                 'totals' => false,
             ],
+            // ----- 會計三帳簿（與畫面共用 AccountingBooks 的計算） -----
+            'books-journal' => [
+                'title' => '日記帳', 'orientation' => 'L',
+                'columns' => [
+                    $this->col('jv_date', '日期', 'text', 12), $this->col('jv_no', '傳票號', 'text', 16),
+                    $this->col('ac_code', '科目代碼'), $this->col('ac_name', '會計科目', 'text', 24),
+                    $this->col('summary', '摘要', 'text', 36),
+                    $this->col('je_debit', '借方', 'money'), $this->col('je_credit', '貸方', 'money'),
+                ],
+                'rows' => function () {
+                    [$from, $to, $acId] = $this->bookFilters();
+                    return array_map(
+                        fn($r) => $r + ['summary' => $r['je_summary'] ?: $r['jv_summary']],
+                        (new \App\Libraries\AccountingBooks())->journal($from, $to, $acId)
+                    );
+                },
+                'subtitle' => $this->bookSubtitle(),
+                'note' => '序時簿：依日期順序記錄每一筆分錄，借貸總額必須相等。',
+            ],
+            'books-ledger' => [
+                'title' => '總分類帳', 'orientation' => 'L',
+                'columns' => [
+                    $this->col('ac_code', '科目代碼'), $this->col('ac_name', '會計科目', 'text', 26),
+                    $this->col('ac_category', '類別'),
+                    $this->col('opening', '期初餘額', 'money'), $this->col('opening_side', '借/貸'),
+                    $this->col('debit', '本期借方', 'money'), $this->col('credit', '本期貸方', 'money'),
+                    $this->col('closing', '期末餘額', 'money'), $this->col('closing_side', '借/貸'),
+                ],
+                'rows' => function () {
+                    [$from, $to] = $this->bookFilters();
+                    return array_map(function ($r) {
+                        $r['opening'] = abs($r['opening']);
+                        $r['closing'] = abs($r['closing']);
+                        return $r;
+                    }, (new \App\Libraries\AccountingBooks())->ledger($from, $to));
+                },
+                'subtitle' => $this->bookSubtitle(),
+                'note' => '期初餘額 ＋ 本期借方 − 本期貸方 ＝ 期末餘額。金額以絕對值表示，方向見「借/貸」欄。',
+                'totals' => false,
+            ],
+            'books-detail' => [
+                'title' => '明細分類帳', 'orientation' => 'L',
+                'columns' => [
+                    $this->col('ac_code', '科目代碼'), $this->col('ac_name', '會計科目', 'text', 22),
+                    $this->col('jv_date', '日期', 'text', 12), $this->col('jv_no', '傳票號', 'text', 16),
+                    $this->col('summary', '摘要', 'text', 30),
+                    $this->col('je_debit', '借方', 'money'), $this->col('je_credit', '貸方', 'money'),
+                    $this->col('balance', '累計餘額', 'money'), $this->col('side', '借/貸'),
+                ],
+                'rows' => function () {
+                    [$from, $to, $acId] = $this->bookFilters();
+                    $out = [];
+                    foreach ((new \App\Libraries\AccountingBooks())->detail($from, $to, $acId) as $g) {
+                        $a = $g['account'];
+                        // 每個科目先放一列期初餘額，才看得出累計餘額的起點
+                        $out[] = [
+                            'ac_code' => $a['ac_code'], 'ac_name' => $a['ac_name'],
+                            'jv_date' => '', 'jv_no' => '', 'summary' => '期初餘額',
+                            'je_debit' => null, 'je_credit' => null,
+                            'balance' => abs($g['opening']), 'side' => $g['opening'] ? $g['opening_side'] : '',
+                        ];
+                        foreach ($g['rows'] as $r) {
+                            $out[] = [
+                                'ac_code' => $a['ac_code'], 'ac_name' => $a['ac_name'],
+                                'jv_date' => $r['jv_date'], 'jv_no' => $r['jv_no'],
+                                'summary' => $r['je_summary'] ?: $r['jv_summary'],
+                                'je_debit' => $r['je_debit'], 'je_credit' => $r['je_credit'],
+                                'balance' => abs($r['balance']), 'side' => $r['side'],
+                            ];
+                        }
+                    }
+                    return $out;
+                },
+                'subtitle' => $this->bookSubtitle(),
+                'note' => '逐科目列出每一筆分錄與累計餘額。餘額以絕對值表示，方向見「借/貸」欄。',
+                'totals' => false,
+            ],
+
             // ----- 四大財務報表（與畫面共用 FinancialStatementController 的計算） -----
             'fs-balance' => [
                 'title' => '資產負債表',

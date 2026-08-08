@@ -9,6 +9,7 @@
 
 <div class="card shadow-sm"><div class="card-body p-4">
     <form action="<?= $isEdit ? url_to('InvoiceController::update', $data['inv_id']) : url_to('InvoiceController::store') ?>" method="post">
+        <?= \App\Libraries\EditGuard::field($data['inv_updated_at'] ?? null) ?>
         <div class="row">
             <div class="col-md-3 mb-3"><label class="form-label">發票號碼</label>
                 <input type="text" class="form-control" name="inv_number" value="<?= esc($isEdit ? ($data['inv_number'] ?? '') : ($defaultNo ?? '')) ?>" <?= $isEdit?'readonly':'' ?>
