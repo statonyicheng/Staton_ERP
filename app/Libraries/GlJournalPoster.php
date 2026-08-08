@@ -2,6 +2,7 @@
 
 namespace App\Libraries;
 
+use App\Libraries\DocumentNumber;
 use App\Models\JournalVoucherModel;
 use App\Models\JournalEntryModel;
 use App\Models\AccountModel;
@@ -80,14 +81,6 @@ class GlJournalPoster
 
         if (!$rows) return ['ok' => 0, 'skipped' => 0, 'error' => '沒有待過帳的交易'];
 
-        // 單號流水：先抓每日目前最大號，避免每筆都回查資料庫
-        $seq = [];
-        foreach ($this->db->table('journal_vouchers')->select('jv_no')->like('jv_no', 'JV', 'after')->get()->getResultArray() as $r) {
-            if (preg_match('/^JV(\d{8})-(\d+)$/', $r['jv_no'], $m)) {
-                $seq[$m[1]] = max($seq[$m[1]] ?? 0, (int) $m[2]);
-            }
-        }
-
         $ok = 0; $skipped = 0;
         $this->db->transStart();
         try {
@@ -109,9 +102,9 @@ class GlJournalPoster
                     $entries[] = [$settled ? $cashId : $apId, 0, $gross, $settled ? self::CASH : self::AP];
                 }
 
-                $ymd = date('Ymd', strtotime($t['t_date']));
-                $seq[$ymd] = ($seq[$ymd] ?? 0) + 1;
-                $jvNo = 'JV' . $ymd . '-' . str_pad((string) $seq[$ymd], 3, '0', STR_PAD_LEFT);
+                // 一律走共用的原子取號，才會同步更新 document_sequences 計數器；
+                // 早期版本在這裡自行計算流水號，導致計數器落後於既有單號。
+                $jvNo = DocumentNumber::daily('JV', $t['t_date']);
 
                 $jvId = $this->jvModel->insert([
                     'jv_no' => $jvNo,

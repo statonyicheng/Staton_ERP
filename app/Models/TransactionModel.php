@@ -29,20 +29,19 @@ class TransactionModel extends AuditedModel
         't_ac_id' => ['required' => '請選擇會計科目'],
     ];
 
-    /** 業務別（事業模式）── 依【仕坦登】顧問服務的營收線劃分 */
+    /** 業務別（事業模式）── 依【嵐可】財務架構的商業模式劃分 */
     public const SEGMENTS = [
         'M-0' => '共用/總部',
-        'M-1' => '企業管家',
-        'M-2' => '記帳與稅務',
-        'M-3' => '工商登記與智財',
-        'M-4' => '財務顧問專案',
-        'M-5' => '分潤與代收代付',
+        'M-1' => '空間租賃',
+        'M-2' => '借址登記',
+        'M-3' => '額外服務',
+        'M-4' => '其他業務',
         '非營業' => '非營業',
     ];
     /** 進損益表的損益階層順序 */
     public const PL_TIERS = ['營業收入', '一階成本', '二階費用', '三階費用', '四階費用'];
     /** 損益表用的營運業務別（不含非營業） */
-    public const PL_SEGMENTS = ['M-0', 'M-1', 'M-2', 'M-3', 'M-4', 'M-5'];
+    public const PL_SEGMENTS = ['M-0', 'M-1', 'M-2', 'M-3', 'M-4'];
 
     public function getList($keyword = null, $page = 1, $ym = null)
     {
