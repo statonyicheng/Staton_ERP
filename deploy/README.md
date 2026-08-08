@@ -218,15 +218,20 @@ sudo certbot --nginx -d erp.你的網域
 
 ## 上線後的例行檢查
 
+程式碼歸 `www-data` 所有、`.env` 是 600 權限，所以 CLI 指令要用 `sudo -u www-data` 執行；
+直接用 ubuntu 身分跑會在讀 `.env` 時失敗（DotEnv 例外）。
+
 ```bash
 cd /var/www/staton-erp
 
-php spark erp:audit         # 資料一致性（庫存、單號、報表勾稽）
-php spark erp:perm-check    # 角色權限規則
-php spark erp:view-check    # 樣板渲染
+sudo -u www-data php spark erp:audit          # 資料一致性（庫存、單號、報表勾稽）
+sudo -u www-data php spark erp:perm-check     # 角色權限規則
+sudo -u www-data php spark erp:view-check     # 樣板渲染
+sudo -u www-data php spark erp:lock-selftest  # 樂觀鎖
+sudo -u www-data php spark erp:audit-selftest # 稽核軌跡
 
 sudo tail -f /var/log/nginx/staton-erp.error.log   # 出錯時看這裡
-tail -50 writable/logs/log-$(date +%Y-%m-%d).php   # 應用程式錯誤
+sudo tail -50 writable/logs/log-$(date +%Y-%m-%d).log   # 應用程式錯誤
 ```
 
 **備份**：每天 03:15 自動備份到 `/var/backups/staton-erp`。
