@@ -26,7 +26,7 @@
 | 項目 | 選擇 |
 |---|---|
 | 名稱 | `staton-erp` |
-| AMI | **Ubuntu Server 24.04 LTS**（x86_64） |
+| AMI | **Ubuntu Server 24.04 LTS**（x86_64）<br>⚠ 見下方「PHP 版本」說明 |
 | 執行個體類型 | **t3.small**（2 vCPU / 2GB）<br>想再省可選 `t4g.small`（ARM，約便宜 20%，本系統相容） |
 | 金鑰對 | 新建一組，`.pem` 檔**下載後妥善保管**（遺失就進不去機器） |
 | 儲存體 | **30 GB gp3**（程式碼 + 商品圖 537MB + 備份綽綽有餘） |
@@ -58,6 +58,30 @@ EC2 → 網路與安全性 → **彈性 IP** → 配置 → 關聯到 `staton-er
 - 通知：實際費用達 100% 時寄信給你
 
 免費 credits 用完或有資源忘了關，你會第一時間知道。
+
+---
+
+### ⚠ 關於 PHP 版本（2026-08-08 實際踩到）
+
+本專案目前跑 **CodeIgniter 4.7.4**，需要 **PHP 8.1 以上**。
+
+各 Ubuntu 版本預設提供的 PHP：
+
+| Ubuntu | 預設 PHP | 可用嗎 |
+|---|---|---|
+| 24.04 LTS | 8.3 | ✅ 最穩 |
+| 26.04 LTS | 8.5 | ✅ 可以（CI4 4.7.4 起支援） |
+
+**注意**：如果專案還停在 CI4 4.6.x，**不能**用 Ubuntu 26.04
+——4.6 的相依 `laminas-escaper` 限制 PHP ≤ 8.4，composer 會直接擋下安裝，
+而 `ppa:ondrej/php` 當時尚未支援 26.04（resolute），無法退裝舊版 PHP。
+
+**升級框架後務必補齊 Config 屬性**：CI4 大版本升級時，框架新增的設定屬性
+不會自動出現在專案的 `app/Config/*.php`，缺少時**不會**在啟動時報錯，
+而是執行期存取到才爆。本次症狀是「所有 404 都變成 500」
+（錯誤處理要輸出 JSON 時撞到 `Config\Format::$jsonEncodeDepth` 未定義）。
+比對方式：把專案的 `app/Config/X.php` 與
+`vendor/codeigniter4/framework/app/Config/X.php` 的屬性清單對照，缺的補上。
 
 ---
 
