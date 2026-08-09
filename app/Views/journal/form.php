@@ -26,12 +26,22 @@ foreach ($grouped as $tier => $list) {
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3 mb-3">
-                    <label class="form-label">傳票號</label>
-                    <input type="text" class="form-control" name="jv_no" value="<?= esc($isEdit ? ($data['jv_no'] ?? '') : ($defaultNo ?? '')) ?>" <?= $isEdit ? 'readonly' : '' ?>>
+                    <label class="form-label" for="jvNo">
+                        傳票編號
+                        <?php if (!$isEdit): ?>
+                            <i class="bi bi-info-circle text-muted"
+                               title="編號依傳票日期自動編定，改日期會跟著更新；實際編號在存檔時確定"></i>
+                        <?php endif; ?>
+                    </label>
+                    <input type="text" class="form-control bg-light" id="jvNo" name="jv_no"
+                           value="<?= esc($isEdit ? ($data['jv_no'] ?? '') : ($defaultNo ?? '')) ?>" readonly>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label class="form-label">日期</label>
-                    <input type="date" class="form-control" name="jv_date" value="<?= esc($data['jv_date'] ?? date('Y-m-d')) ?>">
+                    <label class="form-label" for="jvDate">日期</label>
+                    <input type="date" class="form-control" id="jvDate" name="jv_date"
+                           value="<?= esc($data['jv_date'] ?? date('Y-m-d')) ?>"
+                           data-preview-url="<?= site_url('journal/next-no') ?>"
+                           data-is-edit="<?= $isEdit ? '1' : '0' ?>">
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label">類別</label>
@@ -46,7 +56,7 @@ foreach ($grouped as $tier => $list) {
                            title="四階損益分析會依業務別分欄；只動資產負債科目的傳票可留在共用/總部"></i>
                     </label>
                     <select class="form-select" name="jv_segment">
-                        <?php foreach (\App\Models\TransactionModel::SEGMENTS as $code => $label): ?>
+                        <?php foreach (\App\Models\TransactionModel::segments() as $code => $label): ?>
                             <option value="<?= esc($code) ?>" <?= ($data['jv_segment'] ?? 'M-0') === $code ? 'selected' : '' ?>>
                                 <?= esc($code === '非營業' ? $label : "{$code} {$label}") ?>
                             </option>
@@ -107,6 +117,26 @@ foreach ($grouped as $tier => $list) {
 
 <script>
 (function () {
+    // 傳票編號跟著日期走：編號含日期（JV20260731-001），日期改了編號沒改會對不起來。
+    // 這裡拿到的是預覽（不佔號），實際編號在存檔時依最終日期原子取號決定。
+    const dateEl = document.getElementById('jvDate');
+    const noEl = document.getElementById('jvNo');
+    if (dateEl && noEl && dateEl.dataset.isEdit !== '1') {
+        dateEl.addEventListener('change', async () => {
+            if (!dateEl.value) return;
+            try {
+                const r = await fetch(`${dateEl.dataset.previewUrl}?date=${encodeURIComponent(dateEl.value)}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const j = await r.json();
+                if (j && j.no) noEl.value = j.no;
+            } catch (e) {
+                // 取不到就維持原本的號碼，存檔時伺服器端還是會依日期重新編定
+                console.warn('傳票編號預覽失敗', e);
+            }
+        });
+    }
+
     let idx = 0;
     const body = document.getElementById('itemsBody');
     const tpl = document.getElementById('rowTpl').innerHTML;

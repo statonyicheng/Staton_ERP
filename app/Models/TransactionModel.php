@@ -30,26 +30,27 @@ class TransactionModel extends AuditedModel
     ];
 
     /**
-     * 業務別（事業模式）── 依仕坦登的顧問業務劃分。
+     * 業務別（商業模式）已改成可維護的主檔 `business_segments`
+     * （基本資料管理 → 業務別設定），不再寫死在程式碼裡。
+     * 這兩個存取點保留下來，全站沿用同一個來源。
      *
-     * ⚠ 這組定義必須跟資料庫裡的資料來源對得上。【嵐可】示範資料
-     * （LankeFinanceSeeder）用的是另一套商業模式（M-1 空間租賃／M-2 借址登記／
-     * M-3 額外服務／M-4 其他業務），若日後改回灌嵐可資料，這裡的標籤要一起換回去，
-     * 否則報表的業務別欄位會張冠李戴 —— 數字對、名稱錯，比錯得明顯更難發現。
+     * ⚠ 業務別的標籤必須跟資料來源對得上：【嵐可】示範資料用的是另一套商業模式
+     * （空間租賃／借址登記／額外服務），換資料來源時主檔也要一起改，
+     * 否則報表會數字對、名稱錯 —— 比錯得明顯更難發現。
      */
-    public const SEGMENTS = [
-        'M-0' => '共用/總部',
-        'M-1' => '企業管家',
-        'M-2' => '記帳與稅務',
-        'M-3' => '工商登記與智財',
-        'M-4' => '財務顧問專案',
-        'M-5' => '分潤與代收代付',
-        '非營業' => '非營業',
-    ];
+    public static function segments(): array
+    {
+        return \App\Models\BusinessSegmentModel::map();
+    }
+
     /** 進損益表的損益階層順序 */
     public const PL_TIERS = ['營業收入', '一階成本', '二階費用', '三階費用', '四階費用'];
-    /** 損益表用的營運業務別（不含非營業） */
-    public const PL_SEGMENTS = ['M-0', 'M-1', 'M-2', 'M-3', 'M-4', 'M-5'];
+
+    /** 損益表用的營運業務別；由主檔的「列入四階損益」決定，不含非營業 */
+    public static function plSegments(): array
+    {
+        return \App\Models\BusinessSegmentModel::plCodes();
+    }
 
     public function getList($keyword = null, $page = 1, $ym = null)
     {
@@ -87,6 +88,9 @@ class TransactionModel extends AuditedModel
         $to ??= $from;
         if ($to < $from) [$from, $to] = [$to, $from];
 
+        // 報表欄位由業務別主檔決定（基本資料管理 → 業務別設定），不再寫死在程式碼裡
+        $plSegments = self::plSegments();
+
         $amtExpr = $withTax ? '(t.t_amount + t.t_tax)' : 't.t_amount';
 
         $rows = $this->db->table('gl_transactions t')
@@ -101,19 +105,19 @@ class TransactionModel extends AuditedModel
         // matrix[tier][seg] = amt
         $m = [];
         foreach (self::PL_TIERS as $tier) {
-            foreach (self::PL_SEGMENTS as $seg) $m[$tier][$seg] = 0;
+            foreach ($plSegments as $seg) $m[$tier][$seg] = 0;
             $m[$tier]['total'] = 0;
         }
         foreach ($rows as $r) {
             $tier = $r['tier']; $seg = $r['seg'];
             if (!isset($m[$tier])) continue;
-            if (!in_array($seg, self::PL_SEGMENTS, true)) $seg = 'M-0';
+            if (!in_array($seg, $plSegments, true)) $seg = \App\Models\BusinessSegmentModel::fallbackCode();
             $m[$tier][$seg] += (int) $r['amt'];
             $m[$tier]['total'] += (int) $r['amt'];
         }
 
         // 計算各階毛利
-        $cols = array_merge(self::PL_SEGMENTS, ['total']);
+        $cols = array_merge($plSegments, ['total']);
         $calc = fn($a, $b) => array_combine($cols, array_map(fn($c) => ($m[$a][$c] ?? 0) - ($m[$b][$c] ?? 0), $cols));
         $sub = function ($tierA, $expenseTier) use ($m, $cols) {
             $out = [];
@@ -130,7 +134,7 @@ class TransactionModel extends AuditedModel
         return [
             'from' => $from, 'to' => $to, 'withTax' => $withTax,
             'ym' => $from === $to ? $from : "{$from} ~ {$to}",
-            'segments' => self::PL_SEGMENTS,
+            'segments' => $plSegments,
             'matrix' => $m,
             'gp1' => $gp1, 'gp2' => $gp2, 'gp3' => $gp3, 'gp4' => $gp4,
         ];

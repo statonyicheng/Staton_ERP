@@ -86,6 +86,15 @@ $routes->group('shipment', function ($routes) {
     $routes->get('view/(:num)', 'ShipmentController::view/$1');
 });
 
+$routes->group('business-segment', function ($routes) {
+    $routes->get('/', 'BusinessSegmentController::index');
+    $routes->get('create', 'BusinessSegmentController::create');
+    $routes->get('edit/(:num)', 'BusinessSegmentController::edit/$1');
+    $routes->post('store', 'BusinessSegmentController::store');
+    $routes->post('update/(:num)', 'BusinessSegmentController::update/$1');
+    $routes->get('delete/(:num)', 'BusinessSegmentController::delete/$1');
+});
+
 $routes->group('payment-method', function ($routes) {
     $routes->get('/', 'PaymentMethodController::index');
     $routes->get('create', 'PaymentMethodController::create');
@@ -226,6 +235,7 @@ $routes->get('mrp', 'MrpController::index');
 $routes->group('journal', function ($routes) {
     $routes->get('/', 'JournalController::index');
     $routes->get('create', 'JournalController::create');
+    $routes->get('next-no', 'JournalController::nextNo');
     $routes->get('edit/(:num)', 'JournalController::edit/$1');
     $routes->get('view/(:num)', 'JournalController::view/$1');
     $routes->post('save', 'JournalController::save');

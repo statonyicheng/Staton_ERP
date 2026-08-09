@@ -615,8 +615,8 @@ class ExportController extends BaseController
                 'title' => '四階損益分析', 'orientation' => 'L',
                 'columns' => array_merge(
                     [$this->col('item', '項目', 'text', 22)],
-                    array_map(fn($s) => $this->col($s, $s . ' ' . (TransactionModel::SEGMENTS[$s] ?? ''), 'money'),
-                        TransactionModel::PL_SEGMENTS),
+                    array_map(fn($s) => $this->col($s, $s . ' ' . (TransactionModel::segments()[$s] ?? ''), 'money'),
+                        TransactionModel::plSegments()),
                     [$this->col('total', '合計', 'money'), $this->col('pct', '% 佔收入')]
                 ),
                 'rows' => function () use ($tx) {
@@ -637,7 +637,7 @@ class ExportController extends BaseController
                     $out = [];
                     foreach ($lines as [$label, $vals]) {
                         $row = ['item' => $label];
-                        foreach (TransactionModel::PL_SEGMENTS as $s) $row[$s] = (int) ($vals[$s] ?? 0);
+                        foreach (TransactionModel::plSegments() as $s) $row[$s] = (int) ($vals[$s] ?? 0);
                         $row['total'] = (int) ($vals['total'] ?? 0);
                         $row['pct'] = $pct($row['total']);
                         $out[] = $row;

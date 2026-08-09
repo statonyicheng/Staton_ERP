@@ -42,6 +42,28 @@ class DocumentNumber
     }
 
     /**
+     * 預覽「下一個號碼會長怎樣」，**不會佔號**。
+     *
+     * 給表單即時顯示用（例如改日期時同步更新畫面上的單號）。因為沒有真的遞增，
+     * 兩個人同時看可能看到同一個號 —— 這沒關係，實際號碼一律在存檔時用
+     * daily() 原子取號決定，畫面上的只是預覽。
+     */
+    public static function preview(string $scope, ?string $date = null, ?string $prefix = null, int $pad = 3): string
+    {
+        $ymd = date('Ymd', $date ? strtotime($date) : time());
+        $db = \Config\Database::connect();
+
+        $row = $db->query(
+            'SELECT ds_last_no FROM document_sequences WHERE ds_scope = ? AND ds_period = ?',
+            [$scope, $ymd]
+        )->getRow();
+
+        $next = ((int) ($row->ds_last_no ?? 0)) + 1;
+
+        return ($prefix ?? $scope) . $ymd . '-' . str_pad((string) $next, $pad, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * 日單號：<PREFIX><Ymd>-<nnn>，例如 PO20260808-001。
      *
      * @param string      $scope  計數範圍（通常等於前綴）

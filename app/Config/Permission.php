@@ -28,7 +28,7 @@ class Permission
     public const MODULES = [
         'customer' => '客戶資料', 'supplier' => '廠商資料', 'product' => '商品資料',
         'product-category' => '產品分類', 'pricing' => '商品價格', 'payment-method' => '結帳方式',
-        'account' => '會計科目',
+        'account' => '會計科目', 'business-segment' => '業務別設定',
         'quote' => '報價單', 'order' => '訂單', 'shipment' => '出貨', 'sales-report' => '銷售統計',
         'purchase-requisition' => '請購', 'purchase-order' => '採購單',
         'goods-receipt' => '進貨退貨', 'purchase-report' => '採購報表',
@@ -62,7 +62,7 @@ class Permission
 
         // 會計：帳務全權；營運單據可看不可改（要對帳但不該改業務的單）
         'accounting' => [
-            'account' => 'rw', 'ledger' => 'rw', 'journal' => 'rw', 'transaction' => 'rw',
+            'account' => 'rw', 'business-segment' => 'rw', 'ledger' => 'rw', 'journal' => 'rw', 'transaction' => 'rw',
             'pnl' => 'rw', 'cashflow' => 'rw', 'auto-journal' => 'rw', 'open-item' => 'rw',
             'fs' => 'rw', 'books' => 'rw', 'receivable' => 'rw', 'payable' => 'rw', 'settlement' => 'rw',
             'invoice' => 'rw', 'fixed-asset' => 'rw', 'cost' => 'rw',

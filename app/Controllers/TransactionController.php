@@ -38,7 +38,7 @@ class TransactionController extends BaseController
         return view('transaction/form', [
             'isEdit' => false,
             'accounts' => $this->accountModel->getAllForDropdown(),
-            'segments' => TransactionModel::SEGMENTS,
+            'segments' => TransactionModel::segments(),
         ]);
     }
 
@@ -63,7 +63,7 @@ class TransactionController extends BaseController
             'isEdit' => true,
             'data' => $data,
             'accounts' => $this->accountModel->getAllForDropdown(),
-            'segments' => TransactionModel::SEGMENTS,
+            'segments' => TransactionModel::segments(),
         ]);
     }
 
@@ -130,7 +130,7 @@ class TransactionController extends BaseController
             'months'  => $months,
             'range'   => $range,
             'years'   => $this->txModel->availableYears(),
-            'segMap'  => TransactionModel::SEGMENTS,
+            'segMap'  => TransactionModel::segments(),
         ]);
     }
 

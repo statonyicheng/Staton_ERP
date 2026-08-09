@@ -38,8 +38,23 @@ class JournalController extends BaseController
             'isEdit' => false,
             'accounts' => $this->accountModel->getAllForDropdown(),
             'types' => JournalVoucherModel::TYPES,
-            'defaultNo' => $this->jvModel->generateNo(),
+            // 只是預覽 —— 實際編號在存檔時依最終日期原子取號，避免開了表單沒存就佔掉號碼
+            'defaultNo' => \App\Libraries\DocumentNumber::preview('JV'),
         ]);
+    }
+
+    /**
+     * AJAX：預覽某個日期的下一個傳票編號（不佔號）。
+     * 傳票編號含日期，使用者改日期時畫面要跟著更新，否則編號與日期會對不起來。
+     */
+    public function nextNo()
+    {
+        $date = $this->request->getGet('date') ?: date('Y-m-d');
+        if (! strtotime($date)) {
+            return $this->response->setStatusCode(400)->setJSON(['error' => '日期格式不正確']);
+        }
+
+        return $this->response->setJSON(['no' => \App\Libraries\DocumentNumber::preview('JV', $date)]);
     }
 
     public function edit($id)
@@ -103,7 +118,9 @@ class JournalController extends BaseController
                 $this->jvModel->update($jvId, $jvData);
                 $this->jeModel->deleteByVoucher($jvId);
             } else {
-                $jvData['jv_no'] = $post['jv_no'] ?: $this->jvModel->generateNo($jvData['jv_date']);
+                // 編號一律在此依「最終日期」原子取號，不採用表單送來的值 ——
+                // 表單上的只是預覽，使用者改過日期、或別人同時存檔，都以這裡為準
+                $jvData['jv_no'] = $this->jvModel->generateNo($jvData['jv_date']);
                 $jvId = $this->jvModel->insert($jvData);
             }
             $sort = 0;

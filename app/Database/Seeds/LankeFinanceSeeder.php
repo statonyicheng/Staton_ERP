@@ -162,7 +162,7 @@ class LankeFinanceSeeder extends Seeder
     private function segment($v): string
     {
         $s = trim((string) $v);
-        return isset(\App\Models\TransactionModel::SEGMENTS[$s]) ? $s : 'M-0';
+        return isset(\App\Models\TransactionModel::segments()[$s]) ? $s : 'M-0';
     }
 
     private function clip($v, int $len): ?string
