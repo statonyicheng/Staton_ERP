@@ -124,8 +124,9 @@ $groups = array_values(array_filter(
     fn($g) => ! empty(array_filter($g['items'], fn($it) => ! isset($it['section'])))
 ));
 
-// 計算每個群組是否需展開（含 active 項目，或預設展開前兩個營運群組）
-$defaultOpen = ['grpBase', 'grpSales'];
+// 群組一律收合，只有「目前所在頁面」那一組會自動展開。
+// 不預設展開任何群組 —— 一進系統就攤開兩大組，選單很長、反而要先捲動才找得到東西。
+$defaultOpen = [];
 ?>
 <!DOCTYPE html>
 <html lang="zh-Hant">
