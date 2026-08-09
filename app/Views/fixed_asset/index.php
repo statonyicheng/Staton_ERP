@@ -57,9 +57,7 @@
                 </table>
             </div>
             <p class="small text-muted mb-0"><i class="bi bi-info-circle me-1"></i>年折舊採直線法 =（取得成本 − 殘值）÷ 耐用年數</p>
-            <?php if ($pager['totalPages'] > 1): ?>
-                <?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('FixedAssetController::index'), 'params' => ['keyword' => $keyword ?? '']]) ?>
-            <?php endif; ?>
+<?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('FixedAssetController::index'), 'params' => ['keyword' => $keyword ?? '']]) ?>
         <?php endif; ?>
     </div>
 </div>

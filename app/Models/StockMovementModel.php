@@ -64,7 +64,7 @@ class StockMovementModel extends AuditedModel
         $builder->orderBy('sm.sm_date', 'DESC')->orderBy('sm.sm_id', 'DESC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 15;
+        $perPage = \App\Libraries\PageSize::get(15);
         $totalPages = (int) ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 

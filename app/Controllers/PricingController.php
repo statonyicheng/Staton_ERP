@@ -24,7 +24,7 @@ class PricingController extends BaseController
         }
         $builder->orderBy('p_code', 'ASC');
         $total = $builder->countAllResults(false);
-        $perPage = 15;
+        $perPage = \App\Libraries\PageSize::get(15);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 
         return view('pricing/index', [

@@ -89,13 +89,11 @@
                 </div>
 
                 <!-- 分頁 -->
-                <?php if ($pager['totalPages'] > 1): ?>ㄋ
-                    <?= view('components/pagination', [
-                        'pager' => $pager,
-                        'baseUrl' => url_to('ProductCategoryController::index'),
-                        'params' => ['keyword' => $keyword ?? '']
-                    ]) ?>
-                <?php endif; ?>
+                <?= view('components/pagination', [
+                    'pager' => $pager,
+                    'baseUrl' => url_to('ProductCategoryController::index'),
+                    'params' => ['keyword' => $keyword ?? '']
+                ]) ?>
             <?php endif; ?>
         </div>
     </div>

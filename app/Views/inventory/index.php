@@ -63,9 +63,7 @@
                     </tbody>
                 </table>
             </div>
-            <?php if ($pager['totalPages'] > 1): ?>
-                <?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('InventoryController::index'), 'params' => ['keyword' => $keyword ?? '', 'w' => $wId ?? '']]) ?>
-            <?php endif; ?>
+<?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('InventoryController::index'), 'params' => ['keyword' => $keyword ?? '', 'w' => $wId ?? '']]) ?>
         <?php endif; ?>
     </div>
 </div>

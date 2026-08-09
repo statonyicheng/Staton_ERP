@@ -33,7 +33,7 @@ class PurchaseOrderModel extends AuditedModel
         $builder->orderBy('po.po_date', 'DESC')->orderBy('po.po_id', 'DESC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 12;
+        $perPage = \App\Libraries\PageSize::get(12);
         $totalPages = (int) ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 

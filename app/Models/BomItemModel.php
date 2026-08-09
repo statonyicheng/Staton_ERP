@@ -25,7 +25,7 @@ class BomItemModel extends AuditedModel
         $builder->groupBy('b.bi_parent_p_id')->orderBy('p.p_code', 'ASC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 12;
+        $perPage = \App\Libraries\PageSize::get(12);
         $totalPages = (int) ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
         return ['data' => $data, 'currentPage' => (int) $page, 'totalPages' => $totalPages];

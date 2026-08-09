@@ -27,7 +27,7 @@ class InvoiceModel extends AuditedModel
         $builder->orderBy('inv.inv_date', 'DESC')->orderBy('inv.inv_id', 'DESC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 12;
+        $perPage = \App\Libraries\PageSize::get(12);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
         return ['data' => $data, 'currentPage' => (int) $page, 'totalPages' => (int) ceil($total / $perPage)];
     }

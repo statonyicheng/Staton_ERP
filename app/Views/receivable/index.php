@@ -67,7 +67,7 @@
                     </tbody>
                 </table>
             </div>
-            <?php if ($pager['totalPages'] > 1): ?><?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('ReceivableController::index'), 'params' => ['keyword' => $keyword ?? '', 'status' => $status ?? '']]) ?><?php endif; ?>
+<?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('ReceivableController::index'), 'params' => ['keyword' => $keyword ?? '', 'status' => $status ?? '']]) ?>
         <?php endif; ?>
     </div>
 </div>

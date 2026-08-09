@@ -68,7 +68,7 @@ class TransactionModel extends AuditedModel
         $builder->orderBy('t.t_date', 'DESC')->orderBy('t.t_id', 'DESC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 15;
+        $perPage = \App\Libraries\PageSize::get(15);
         $totalPages = (int) ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 

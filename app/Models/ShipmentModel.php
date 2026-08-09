@@ -128,7 +128,7 @@ class ShipmentModel extends AuditedModel
         $builder->orderBy('shipments.s_created_at', 'DESC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 10;
+        $perPage = \App\Libraries\PageSize::get(10);
         $totalPages = ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 

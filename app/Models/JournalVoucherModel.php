@@ -24,7 +24,7 @@ class JournalVoucherModel extends AuditedModel
         $builder->orderBy('jv_date', 'DESC')->orderBy('jv_id', 'DESC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 12;
+        $perPage = \App\Libraries\PageSize::get(12);
         $totalPages = (int) ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
         return ['data' => $data, 'currentPage' => (int) $page, 'totalPages' => $totalPages];

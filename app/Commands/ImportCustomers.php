@@ -85,7 +85,8 @@ class ImportCustomers extends BaseCommand
             }
 
             $data = [
-                'c_code'   => $model->generateCustomerCode(),
+                // 有統編就直接拿統編當客戶編號（開單時打統編就找得到）
+                'c_code'   => $model->generateCustomerCode($taxId),
                 'c_name'   => $name,
                 'c_tax_id' => $taxId,
             ];

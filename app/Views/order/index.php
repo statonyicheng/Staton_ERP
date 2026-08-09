@@ -135,13 +135,11 @@
                 </div>
 
                 <!-- 分頁 -->
-                <?php if ($pager['totalPages'] > 1): ?>
-                    <?= view('components/pagination', [
+<?= view('components/pagination', [
                         'pager' => $pager,
                         'baseUrl' => url_to('OrderController::index'),
                         'params' => ['keyword' => $keyword ?? '']
                     ]) ?>
-                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>

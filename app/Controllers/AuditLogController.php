@@ -39,7 +39,7 @@ class AuditLogController extends BaseController
         if ($to)     $b->where('al_at <=', $to . ' 23:59:59');
         $b->orderBy('al_id', 'DESC');
 
-        $perPage = 30;
+        $perPage = \App\Libraries\PageSize::get(30);
         $total = $b->countAllResults(false);
         $rows = $b->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 

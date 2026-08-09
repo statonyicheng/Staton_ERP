@@ -38,7 +38,7 @@ class QuoteController extends BaseController
     {
         $keyword = $this->request->getGet('keyword');
         $page = $this->request->getGet('page') ?: 1;
-        $perPage = 10;
+        $perPage = \App\Libraries\PageSize::get(10);
 
         // 使用 Model 的分頁查詢方法
         $result = $this->quoteModel->getQuotesWithPagination($keyword, $page, $perPage);

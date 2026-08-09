@@ -30,11 +30,42 @@ function buildPagingUrl($baseUrl, $page, $params = [], $pageParam = 'page') {
 // 取得當前的 GET 參數
 $currentParams = $params ?? $_GET ?? [];
 $pageParam = $pageParam ?? 'page';
+
+// 每頁筆數：換筆數時一律回到第 1 頁，否則可能跳到不存在的頁碼。
+// 同一頁面有多個子列表時（例如客戶明細頁的報價／訂單），只讓主列表顯示這個下拉，
+// 否則會出現兩個控制同一個設定的選單。
+$showPageSize = $showPageSize ?? true;
+$pageSizeOptions = \App\Libraries\PageSize::OPTIONS;
+$currentPageSize = \App\Libraries\PageSize::current();
+$pageSizeParam = \App\Libraries\PageSize::PARAM;
+$pageSizeBase = $currentParams;
+unset($pageSizeBase['page'], $pageSizeBase[$pageParam], $pageSizeBase[$pageSizeParam]);
+$pageSizeBase = array_filter($pageSizeBase, fn($v) => $v !== '' && $v !== null);
 ?>
 
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
+    <?php if ($showPageSize): ?>
+        <div class="d-flex align-items-center gap-2 text-muted small">
+            <label for="pageSizeSelect" class="mb-0 text-nowrap">每頁顯示</label>
+            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: auto;"
+                onchange="location.href = this.value;">
+                <?php foreach ($pageSizeOptions as $size): ?>
+                    <?php $url = $baseUrl . '?' . http_build_query(array_merge($pageSizeBase, [$pageSizeParam => $size])); ?>
+                    <option value="<?= esc($url) ?>" <?= $size === $currentPageSize ? 'selected' : '' ?>>
+                        <?= $size ?> 筆
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <?php if (!empty($pager['totalPages'])): ?>
+                <span class="text-nowrap">第 <?= $pager['currentPage'] ?> / <?= $pager['totalPages'] ?> 頁</span>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
+    <div class="ms-auto">
 <?php if ($pager['totalPages'] > 1): ?>
-    <nav aria-label="分頁導航">
-        <ul class="pagination justify-content-center">
+    <nav aria-label="分頁導航" class="mb-0">
+        <ul class="pagination mb-0">
             <!-- 上一頁 -->
             <li class="page-item <?= $pager['currentPage'] <= 1 ? 'disabled' : '' ?>">
                 <?php if ($pager['currentPage'] > 1): ?>
@@ -138,5 +169,5 @@ $pageParam = $pageParam ?? 'page';
         </ul>
     </nav>
 <?php endif; ?>
-
- 
+    </div>
+</div>

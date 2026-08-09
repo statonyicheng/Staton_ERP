@@ -56,8 +56,9 @@ class QuoteModel extends AuditedModel
      * @param int $perPage 每頁筆數
      * @return array ['data' => 資料陣列, 'total' => 總筆數, 'totalPages' => 總頁數]
      */
-    public function getQuotesWithPagination(?string $keyword = null, int $page = 1, int $perPage = 10): array
+    public function getQuotesWithPagination(?string $keyword = null, int $page = 1, ?int $perPage = null): array
     {
+        $perPage = $perPage ?? \App\Libraries\PageSize::get(10);
         $builder = $this->builder()
             ->select('quotes.*, quotes.q_o_id, customers.c_name as customer_name')
             ->join('customers', 'customers.c_id = quotes.q_c_id', 'left');
@@ -85,8 +86,9 @@ class QuoteModel extends AuditedModel
     /**
      * 取得指定客戶的報價單列表（分頁）
      */
-    public function getByCustomer(int $customerId, int $page = 1, int $perPage = 10): array
+    public function getByCustomer(int $customerId, int $page = 1, ?int $perPage = null): array
     {
+        $perPage = $perPage ?? \App\Libraries\PageSize::get(10);
         $builder = $this->builder()
             ->select('q_id, q_number, q_date, q_total_amount, q_created_at')
             ->where('q_c_id', $customerId)

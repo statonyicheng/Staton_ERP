@@ -38,7 +38,7 @@ class FixedAssetModel extends AuditedModel
         $builder->orderBy('fa_acquire_date', 'DESC')->orderBy('fa_id', 'DESC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 10;
+        $perPage = \App\Libraries\PageSize::get(10);
         $totalPages = (int) ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 

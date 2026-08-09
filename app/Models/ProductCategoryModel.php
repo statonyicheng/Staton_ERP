@@ -30,8 +30,9 @@ class ProductCategoryModel extends Model
     /**
      * 取得分頁列表資料
      */
-    public function getList(?string $keyword, int $page = 1, int $perPage = 10): array
+    public function getList(?string $keyword, int $page = 1, ?int $perPage = null): array
     {
+        $perPage = $perPage ?? \App\Libraries\PageSize::get(10);
         $builder = $this->select('pc_id, pc_name, pc_created_at, pc_updated_at');
 
         if ($keyword) {

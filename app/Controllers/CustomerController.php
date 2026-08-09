@@ -41,7 +41,7 @@ class CustomerController extends BaseController
         // 報價單 / 訂單分頁（各自 10 筆）
         $qPage = (int) ($this->request->getGet('qPage') ?? 1);
         $oPage = (int) ($this->request->getGet('oPage') ?? 1);
-        $perPage = 10;
+        $perPage = \App\Libraries\PageSize::get(10);
 
         $quotes = $this->quoteModel->getByCustomer($id, $qPage, $perPage);
         $orders = $this->orderModel->getByCustomer($id, $oPage, $perPage);
@@ -106,11 +106,18 @@ class CustomerController extends BaseController
             $customerId = $data['c_id'] ?? null;
 
             if ($customerId) {
-                // 更新
+                // 更新：原本沒統編、這次補上了，就把客戶編號一起換成統編
+                $current = $this->customerModel->find($customerId);
+                if ($current && empty($current['c_tax_id']) && ! empty($data['c_tax_id'])) {
+                    $newCode = $this->customerModel->generateCustomerCode($data['c_tax_id']);
+                    if ($newCode === trim((string) $data['c_tax_id'])) {
+                        $data['c_code'] = $newCode;
+                    }
+                }
                 $this->customerModel->update($customerId, $data);
             } else {
-                // 新增時自動產生客戶編號
-                $data['c_code'] = $this->customerModel->generateCustomerCode();
+                // 新增：有統編就用統編當客戶編號，沒有才給流水號
+                $data['c_code'] = $this->customerModel->generateCustomerCode($data['c_tax_id'] ?? null);
                 $customerId = $this->customerModel->insert($data);
             }
 

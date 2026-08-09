@@ -28,7 +28,7 @@ class BatchModel extends AuditedModel
         }
         $builder->orderBy('b.b_id', 'DESC');
         $total = $builder->countAllResults(false);
-        $perPage = 12;
+        $perPage = \App\Libraries\PageSize::get(12);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
         return ['data' => $data, 'currentPage' => (int) $page, 'totalPages' => (int) ceil($total / $perPage)];
     }

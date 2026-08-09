@@ -41,7 +41,7 @@ class SettlementModel extends AuditedModel
         $builder->orderBy('st_date', 'DESC')->orderBy('st_id', 'DESC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 15;
+        $perPage = \App\Libraries\PageSize::get(15);
         $totalPages = (int) ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
         return ['data' => $data, 'currentPage' => (int) $page, 'totalPages' => $totalPages];

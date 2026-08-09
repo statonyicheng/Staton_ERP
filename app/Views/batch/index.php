@@ -44,7 +44,7 @@
                 <?php endforeach; ?>
             </tbody>
         </table></div>
-        <?php if ($pager['totalPages'] > 1): ?><?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('BatchController::index'), 'params' => ['keyword' => $keyword ?? '']]) ?><?php endif; ?>
+<?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('BatchController::index'), 'params' => ['keyword' => $keyword ?? '']]) ?>
     <?php endif; ?>
 </div></div>
 

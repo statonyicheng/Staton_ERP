@@ -64,9 +64,7 @@
                     </tbody>
                 </table>
             </div>
-            <?php if ($pager['totalPages'] > 1): ?>
-                <?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('TransactionController::index'), 'params' => ['keyword' => $keyword ?? '', 'ym' => $ym ?? '']]) ?>
-            <?php endif; ?>
+<?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('TransactionController::index'), 'params' => ['keyword' => $keyword ?? '', 'ym' => $ym ?? '']]) ?>
         <?php endif; ?>
     </div>
 </div>

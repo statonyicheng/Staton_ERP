@@ -88,7 +88,7 @@ class OrderModel extends AuditedModel
         $builder->orderBy('orders.o_created_at', 'DESC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 10;
+        $perPage = \App\Libraries\PageSize::get(10);
         $totalPages = ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 
@@ -102,8 +102,9 @@ class OrderModel extends AuditedModel
     /**
      * 取得指定客戶的訂單列表（分頁）
      */
-    public function getByCustomer(int $customerId, int $page = 1, int $perPage = 10): array
+    public function getByCustomer(int $customerId, int $page = 1, ?int $perPage = null): array
     {
+        $perPage = $perPage ?? \App\Libraries\PageSize::get(10);
         $builder = $this->builder()
             ->select('o_id, o_number, o_date, o_total_amount, o_payment_status, o_shipment_status, o_status, o_created_at')
             ->where('o_c_id', $customerId)

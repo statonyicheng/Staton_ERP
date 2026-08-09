@@ -26,7 +26,7 @@ class ProductStockModel extends AuditedModel
         $builder->orderBy('p.p_code', 'ASC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 15;
+        $perPage = \App\Libraries\PageSize::get(15);
         $totalPages = (int) ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 

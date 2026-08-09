@@ -77,8 +77,9 @@ class ProductModel extends AuditedModel
     /**
      * 獲取產品列表（包含分類資訊和第一張圖片）
      */
-    public function getProductsWithCategory($keyword = null, $page = 1, $perPage = 10)
+    public function getProductsWithCategory($keyword = null, $page = 1, ?int $perPage = null)
     {
+        $perPage = $perPage ?? \App\Libraries\PageSize::get(10);
         $builder = $this->builder('products p')
             ->select('p.*, pc.pc_name, pi.pi_name as first_image')
             ->join('product_categories pc', 'pc.pc_id = p.p_pc_id', 'left')

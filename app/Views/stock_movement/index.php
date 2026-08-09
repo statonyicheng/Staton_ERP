@@ -61,9 +61,7 @@
                     </tbody>
                 </table>
             </div>
-            <?php if ($pager['totalPages'] > 1): ?>
-                <?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('StockMovementController::index'), 'params' => ['keyword' => $keyword ?? '', 'type' => $type ?? '', 'w' => $wId ?? '']]) ?>
-            <?php endif; ?>
+<?= view('components/pagination', ['pager' => $pager, 'baseUrl' => url_to('StockMovementController::index'), 'params' => ['keyword' => $keyword ?? '', 'type' => $type ?? '', 'w' => $wId ?? '']]) ?>
         <?php endif; ?>
     </div>
 </div>

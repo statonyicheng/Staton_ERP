@@ -45,7 +45,7 @@ class AccountModel extends AuditedModel
         $builder->orderBy('ac_sort', 'ASC')->orderBy('ac_id', 'ASC');
 
         $total = $builder->countAllResults(false);
-        $perPage = 20;
+        $perPage = \App\Libraries\PageSize::get(20);
         $totalPages = (int) ceil($total / $perPage);
         $data = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 

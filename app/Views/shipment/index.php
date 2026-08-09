@@ -177,8 +177,7 @@
                 </div>
 
                 <!-- 分頁 -->
-                <?php if ($pager['totalPages'] > 1): ?>
-                    <?= view('components/pagination', [
+<?= view('components/pagination', [
                         'pager' => $pager,
                         'baseUrl' => url_to('ShipmentController::index'),
                         'params' => [
@@ -186,7 +185,6 @@
                             'order_id' => $orderId ?? ''
                         ]
                     ]) ?>
-                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
