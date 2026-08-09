@@ -18,7 +18,7 @@ $groups = [
         ['商品價格管理', 'pricing', 'bi-currency-exchange', false],
         ['結帳方式管理', 'payment-method', 'bi-cash-coin', false],
         ['會計科目設定', 'account', 'bi-list-ol', false],
-        ['業務別設定', 'business-segment', 'bi-diagram-3', false],
+        ['商業模式設定', 'business-segment', 'bi-diagram-3', false],
     ]],
     ['id' => 'grpSales', 'label' => '銷售管理', 'icon' => 'bi-graph-up-arrow', 'items' => [
         ['報價單管理', 'quote', 'bi-file-earmark-text', false],

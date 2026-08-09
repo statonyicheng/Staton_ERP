@@ -2,16 +2,16 @@
 <?= $this->section('content') ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>業務別設定</h1>
+    <h1 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>商業模式設定</h1>
     <a href="<?= url_to('BusinessSegmentController::create') ?>" class="btn btn-primary">
-        <i class="bi bi-plus-circle me-1"></i>新增業務別
+        <i class="bi bi-plus-circle me-1"></i>新增商業模式
     </a>
 </div>
 
 <div class="alert alert-info py-2">
     <i class="bi bi-info-circle me-2"></i>
-    業務別＝公司的商業模式劃分。<strong>四階損益分析會依這裡的設定分欄</strong>，
-    每筆交易與分錄傳票都要指定一個業務別，才知道這筆收入或費用屬於哪條業務線。
+    商業模式＝公司怎麼賺錢的劃分方式。<strong>四階損益分析會依這裡的設定分欄</strong>，
+    每筆交易與分錄傳票都要指定一個商業模式，才知道這筆收入或費用屬於哪條業務線。
 </div>
 
 <?php if (session()->getFlashdata('error')): ?>
@@ -44,7 +44,7 @@
                 <thead class="table-light">
                     <tr>
                         <th style="width: 10%;">代號</th>
-                        <th style="width: 16%;">業務別名稱</th>
+                        <th style="width: 16%;">商業模式名稱</th>
                         <th>商業模式定義</th>
                         <th class="text-center" style="width: 10%;">四階損益</th>
                         <th class="text-center" style="width: 10%;">狀態</th>
@@ -54,7 +54,7 @@
                 </thead>
                 <tbody>
                     <?php if (empty($data)): ?>
-                        <tr><td colspan="7" class="text-center text-muted py-4">尚無業務別資料</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-4">尚無商業模式資料</td></tr>
                     <?php else: foreach ($data as $row): ?>
                         <tr>
                             <td><strong class="text-primary"><?= esc($row['bs_code']) ?></strong></td>
@@ -90,7 +90,7 @@
                                        class="btn btn-outline-primary" title="編輯"><i class="bi bi-pencil"></i></a>
                                     <a href="<?= url_to('BusinessSegmentController::delete', $row['bs_id']) ?>"
                                        class="btn btn-outline-danger" title="刪除"
-                                       onclick="return confirm('確定刪除「<?= esc($row['bs_name'], 'js') ?>」？已被交易使用的業務別無法刪除，請改用停用。')">
+                                       onclick="return confirm('確定刪除「<?= esc($row['bs_name'], 'js') ?>」？已被交易使用的商業模式無法刪除，請改用停用。')">
                                         <i class="bi bi-trash"></i></a>
                                 </div>
                             </td>

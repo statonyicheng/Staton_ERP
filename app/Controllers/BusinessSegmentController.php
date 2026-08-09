@@ -27,7 +27,7 @@ class BusinessSegmentController extends BaseController
         $page = (int) ($this->request->getGet('page') ?: 1);
         $data = $this->model->getList($keyword, $page);
 
-        // 每個業務別已被幾筆交易使用 —— 停用或改名前要知道影響範圍
+        // 每個商業模式已被幾筆交易使用 —— 停用或改名前要知道影響範圍
         $usage = [];
         foreach ($data['data'] as $row) {
             $usage[$row['bs_code']] = $this->model->usageCount($row['bs_code']);
@@ -49,7 +49,7 @@ class BusinessSegmentController extends BaseController
     public function edit($id)
     {
         $row = $this->model->find($id);
-        if (! $row) return redirect()->to('/business-segment')->with('error', '業務別不存在');
+        if (! $row) return redirect()->to('/business-segment')->with('error', '商業模式不存在');
 
         return view('business_segment/form', [
             'isEdit' => true,
@@ -66,13 +66,13 @@ class BusinessSegmentController extends BaseController
         $this->model->insert($data);
         BusinessSegmentModel::clearCache();
 
-        return redirect()->to('/business-segment')->with('success', '業務別已新增：' . $data['bs_code'] . ' ' . $data['bs_name']);
+        return redirect()->to('/business-segment')->with('success', '商業模式已新增：' . $data['bs_code'] . ' ' . $data['bs_name']);
     }
 
     public function update($id)
     {
         $row = $this->model->find($id);
-        if (! $row) return redirect()->to('/business-segment')->with('error', '業務別不存在');
+        if (! $row) return redirect()->to('/business-segment')->with('error', '商業模式不存在');
 
         if ($msg = EditGuard::check($this->model, $id, $this->request)) {
             return redirect()->back()->withInput()->with('error', $msg);
@@ -92,13 +92,13 @@ class BusinessSegmentController extends BaseController
         $this->model->update($id, $data);
         BusinessSegmentModel::clearCache();
 
-        return redirect()->to('/business-segment')->with('success', '業務別已更新');
+        return redirect()->to('/business-segment')->with('success', '商業模式已更新');
     }
 
     public function delete($id)
     {
         $row = $this->model->find($id);
-        if (! $row) return redirect()->to('/business-segment')->with('error', '業務別不存在');
+        if (! $row) return redirect()->to('/business-segment')->with('error', '商業模式不存在');
 
         $used = $this->model->usageCount($row['bs_code']);
         if ($used > 0) {
@@ -110,7 +110,7 @@ class BusinessSegmentController extends BaseController
         $this->model->delete($id);
         BusinessSegmentModel::clearCache();
 
-        return redirect()->to('/business-segment')->with('success', '業務別已刪除');
+        return redirect()->to('/business-segment')->with('success', '商業模式已刪除');
     }
 
     /** 整理並驗證表單資料；有問題時回傳錯誤訊息字串 */

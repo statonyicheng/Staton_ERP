@@ -31,7 +31,7 @@ class TransactionModel extends AuditedModel
 
     /**
      * 業務別（商業模式）已改成可維護的主檔 `business_segments`
-     * （基本資料管理 → 業務別設定），不再寫死在程式碼裡。
+     * （基本資料管理 → 商業模式設定），不再寫死在程式碼裡。
      * 這兩個存取點保留下來，全站沿用同一個來源。
      *
      * ⚠ 業務別的標籤必須跟資料來源對得上：【嵐可】示範資料用的是另一套商業模式
@@ -88,7 +88,7 @@ class TransactionModel extends AuditedModel
         $to ??= $from;
         if ($to < $from) [$from, $to] = [$to, $from];
 
-        // 報表欄位由業務別主檔決定（基本資料管理 → 業務別設定），不再寫死在程式碼裡
+        // 報表欄位由商業模式主檔決定（基本資料管理 → 商業模式設定），不再寫死在程式碼裡
         $plSegments = self::plSegments();
 
         $amtExpr = $withTax ? '(t.t_amount + t.t_tax)' : 't.t_amount';

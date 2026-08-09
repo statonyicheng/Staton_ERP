@@ -96,7 +96,7 @@ class BusinessSegmentModel extends AuditedModel
         ];
     }
 
-    /** 該業務別已經被幾筆交易使用（停用/刪除前要看） */
+    /** 該商業模式已經被幾筆交易使用（停用/刪除前要看） */
     public function usageCount(string $code): int
     {
         return (int) $this->db->table('gl_transactions')->where('t_segment', $code)->countAllResults();

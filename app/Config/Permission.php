@@ -28,7 +28,7 @@ class Permission
     public const MODULES = [
         'customer' => '客戶資料', 'supplier' => '廠商資料', 'product' => '商品資料',
         'product-category' => '產品分類', 'pricing' => '商品價格', 'payment-method' => '結帳方式',
-        'account' => '會計科目', 'business-segment' => '業務別設定',
+        'account' => '會計科目', 'business-segment' => '商業模式設定',
         'quote' => '報價單', 'order' => '訂單', 'shipment' => '出貨', 'sales-report' => '銷售統計',
         'purchase-requisition' => '請購', 'purchase-order' => '採購單',
         'goods-receipt' => '進貨退貨', 'purchase-report' => '採購報表',

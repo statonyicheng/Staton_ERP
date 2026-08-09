@@ -3,7 +3,7 @@
 
 <h1>
     <i class="bi bi-<?= $isEdit ? 'pencil-square' : 'plus-circle' ?> me-2"></i>
-    <?= $isEdit ? '編輯' : '新增' ?>業務別
+    <?= $isEdit ? '編輯' : '新增' ?>商業模式
 </h1>
 
 <?php if (session()->getFlashdata('error')): ?>
@@ -40,7 +40,7 @@
                 </div>
 
                 <div class="col-md-4 mb-3">
-                    <label class="form-label" for="bsName">業務別名稱 <span class="text-danger">*</span></label>
+                    <label class="form-label" for="bsName">商業模式名稱 <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="bsName" name="bs_name" maxlength="50" required
                            value="<?= esc(old('bs_name', $data['bs_name'] ?? '')) ?>">
                     <div class="form-text">會顯示在四階損益分析的欄位標題與各表單的下拉選單</div>
