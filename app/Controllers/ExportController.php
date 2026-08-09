@@ -405,7 +405,7 @@ class ExportController extends BaseController
                 'title' => '交易登錄（收付）', 'orientation' => 'L',
                 'columns' => [
                     $this->col('t_date', '日期', 'text', 12), $this->col('t_summary', '摘要', 'text', 34),
-                    $this->col('t_partner', '對象'), $this->col('t_segment', '業務別'),
+                    $this->col('t_partner', '對象'), $this->col('t_segment', '商業模式'),
                     $this->col('ac_code', '科目代碼'), $this->col('ac_name', '會計科目'),
                     $this->col('t_direction', '收付'),
                     $this->col('t_amount', '未稅', 'money'), $this->col('t_tax', '稅額', 'money'),

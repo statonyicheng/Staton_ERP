@@ -51,9 +51,9 @@ foreach ($grouped as $tier => $list) {
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label">
-                        業務別
+                        商業模式
                         <i class="bi bi-info-circle text-muted"
-                           title="四階損益分析會依業務別分欄；只動資產負債科目的傳票可留在共用/總部"></i>
+                           title="四階損益分析會依商業模式分欄；只動資產負債科目的傳票可留在共用/總部"></i>
                     </label>
                     <select class="form-select" name="jv_segment">
                         <?php foreach (\App\Models\TransactionModel::segments() as $code => $label): ?>

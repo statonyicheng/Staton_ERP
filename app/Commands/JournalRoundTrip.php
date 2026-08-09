@@ -34,7 +34,7 @@ class JournalRoundTrip extends BaseCommand
         't_amount'        => '未稅金額',
         't_tax'           => '稅額',
         't_settle_status' => '收付狀態',
-        't_segment'       => '業務別',
+        't_segment'       => '商業模式',
         't_date'          => '日期',
     ];
 

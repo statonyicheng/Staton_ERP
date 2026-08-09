@@ -17,13 +17,13 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as XlDate;
  *  - 以 t_source = 'internal_book' 標記，重跑會先清掉上次匯入的資料，
  *    不會動到使用者在畫面上手動登錄的交易。
  *  - 金額四捨五入到元（本系統不使用小數）。
- *  - 依項目關鍵字自動歸屬會計科目與業務別（M-1~M-5），對不到的落在「其他營業收入 / 其他費用」並列入報告。
+ *  - 依項目關鍵字自動歸屬會計科目與商業模式（M-1~M-5），對不到的落在「其他營業收入 / 其他費用」並列入報告。
  */
 class StatonInternalBookSeeder extends Seeder
 {
     private const SOURCE = 'internal_book';
 
-    /** 收入：關鍵字 → [科目代碼, 業務別]。由上而下第一個命中者勝出，順序有意義。 */
+    /** 收入：關鍵字 → [科目代碼, 商業模式]。由上而下第一個命中者勝出，順序有意義。 */
     private array $incomeRules = [
         ['keys' => ['企業管家'],                                              'code' => '4201', 'seg' => 'M-1'],
         ['keys' => ['代墊', '代繳', '二代健保', '請款收入', '高鐵票'],          'code' => '4206', 'seg' => 'M-5'],
@@ -209,7 +209,7 @@ class StatonInternalBookSeeder extends Seeder
         return $ts ? date('Y-m-d', $ts) : null;
     }
 
-    /** 依項目關鍵字歸屬收入科目與業務別 */
+    /** 依項目關鍵字歸屬收入科目與商業模式 */
     private function classifyIncome(string $item, array &$report): array
     {
         foreach ($this->incomeRules as $rule) {

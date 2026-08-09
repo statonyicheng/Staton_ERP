@@ -5,9 +5,9 @@ namespace App\Models;
 use App\Models\AuditedModel;
 
 /**
- * 業務別（商業模式）主檔。
+ * 商業模式主檔。
  *
- * 取代原本寫死在 `TransactionModel::SEGMENTS` 的常數。所有需要業務別的地方
+ * 取代原本寫死在 `TransactionModel::SEGMENTS` 的常數。所有需要商業模式的地方
  * （傳票表單、交易登錄、四階損益的欄位、匯出）都改讀這裡。
  *
  * 查詢結果在單次請求內快取 —— 四階損益一支報表會問很多次，
@@ -69,7 +69,7 @@ class BusinessSegmentModel extends AuditedModel
         return $out ?: ['M-0'];
     }
 
-    /** 落在報表欄位之外的資料要歸到哪一欄（第一個進損益的業務別） */
+    /** 落在報表欄位之外的資料要歸到哪一欄（第一個進損益的商業模式） */
     public static function fallbackCode(): string
     {
         return self::plCodes()[0];

@@ -68,7 +68,7 @@ $curAc = old('t_ac_id', $data['t_ac_id'] ?? '');
                     <div class="form-text">收入類自動記「收」、支出類自動記「付」；非損益類請自行選收付方向。</div>
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label class="form-label">業務別</label>
+                    <label class="form-label">商業模式</label>
                     <select class="form-select" name="t_segment">
                         <?php foreach ($segments as $k => $v): ?>
                             <option value="<?= $k ?>" <?= old('t_segment', $data['t_segment'] ?? 'M-1') === $k ? 'selected' : '' ?>><?= $k ?> <?= $v ?></option>

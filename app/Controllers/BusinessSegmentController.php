@@ -7,9 +7,9 @@ use App\Libraries\EditGuard;
 use App\Models\BusinessSegmentModel;
 
 /**
- * 業務別（商業模式）設定。
+ * 商業模式設定。
  *
- * 四階損益分析是依業務別分欄的，所以這裡改動會直接影響報表長相：
+ * 四階損益分析是依商業模式分欄的，所以這裡改動會直接影響報表長相：
  * 「列入四階損益」決定它會不會成為報表的一欄。
  */
 class BusinessSegmentController extends BaseController

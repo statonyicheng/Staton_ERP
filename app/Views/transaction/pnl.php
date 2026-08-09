@@ -123,9 +123,9 @@ $years = $years ?? [];
             </table>
         </div>
         <p class="small text-muted mb-0"><i class="bi bi-diagram-3 me-1"></i>
-            資料來源：交易登錄（收付）之進損益科目。業務別：
+            資料來源：交易登錄（收付）之進損益科目。商業模式：
             <?php $sm = []; foreach ($segs as $s) { $sm[] = $s . ' ' . ($segMap[$s] ?? ''); } echo esc(implode('　', $sm)); ?>。
-            共用人事與管理費用目前全數歸於 M-0，可在交易登錄逐筆調整業務別以取得各線真實損益。
+            共用人事與管理費用目前全數歸於 M-0，可在交易登錄逐筆調整商業模式以取得各線真實損益。
         </p>
     </div>
 </div>

@@ -13,7 +13,7 @@
     <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-2"></i><?= session()->getFlashdata('error') ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
 <?php endif; ?>
 
-<div class="alert alert-info py-2"><i class="bi bi-info-circle me-1"></i>所有收入登「收」、支出登「付」，各掛會計科目與業務別；四階損益分析、資金餘額表、總帳皆由本表自動計算。</div>
+<div class="alert alert-info py-2"><i class="bi bi-info-circle me-1"></i>所有收入登「收」、支出登「付」，各掛會計科目與商業模式；四階損益分析、資金餘額表、總帳皆由本表自動計算。</div>
 
 <div class="card shadow-sm mb-3">
     <div class="card-body">
@@ -40,7 +40,7 @@
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
-                        <tr><th>日期</th><th>摘要</th><th>業務別</th><th>會計科目</th><th class="text-center">收/付</th><th class="text-end">未稅</th><th class="text-end">稅額</th><th class="text-center">收付</th><th style="width:110px;" class="text-center">操作</th></tr>
+                        <tr><th>日期</th><th>摘要</th><th>商業模式</th><th>會計科目</th><th class="text-center">收/付</th><th class="text-end">未稅</th><th class="text-end">稅額</th><th class="text-center">收付</th><th style="width:110px;" class="text-center">操作</th></tr>
                     </thead>
                     <tbody>
                         <?php foreach ($data as $t): ?>

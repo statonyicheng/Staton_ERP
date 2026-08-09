@@ -80,7 +80,7 @@ class OpenItemSelfTest extends BaseCommand
                 $this->check('狀態為「未收付」（錢還沒進來）', $gl[0]['t_settle_status'] === '未收付', '實得 ' . $gl[0]['t_settle_status']);
                 $this->check('未稅 10,000／稅 500', (int) $gl[0]['t_amount'] === 10000 && (int) $gl[0]['t_tax'] === 500,
                     "實得 {$gl[0]['t_amount']}／{$gl[0]['t_tax']}");
-                $this->check('業務別沿用傳票（M-1）', $gl[0]['t_segment'] === 'M-1', '實得 ' . $gl[0]['t_segment']);
+                $this->check('商業模式沿用傳票（M-1）', $gl[0]['t_segment'] === 'M-1', '實得 ' . $gl[0]['t_segment']);
             }
             $this->check('資金餘額表尚未認列（未收付不計入）', $this->cashIn(self::BILL_DATE) === 0,
                 '立帳當月現金流入應為 0，實得 ' . $this->cashIn(self::BILL_DATE));

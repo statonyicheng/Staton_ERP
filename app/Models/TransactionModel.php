@@ -30,11 +30,11 @@ class TransactionModel extends AuditedModel
     ];
 
     /**
-     * 業務別（商業模式）已改成可維護的主檔 `business_segments`
+     * 商業模式已改成可維護的主檔 `business_segments`
      * （基本資料管理 → 商業模式設定），不再寫死在程式碼裡。
      * 這兩個存取點保留下來，全站沿用同一個來源。
      *
-     * ⚠ 業務別的標籤必須跟資料來源對得上：【嵐可】示範資料用的是另一套商業模式
+     * ⚠ 商業模式的標籤必須跟資料來源對得上：【嵐可】示範資料用的是另一套商業模式
      * （空間租賃／借址登記／額外服務），換資料來源時主檔也要一起改，
      * 否則報表會數字對、名稱錯 —— 比錯得明顯更難發現。
      */
@@ -46,7 +46,7 @@ class TransactionModel extends AuditedModel
     /** 進損益表的損益階層順序 */
     public const PL_TIERS = ['營業收入', '一階成本', '二階費用', '三階費用', '四階費用'];
 
-    /** 損益表用的營運業務別；由主檔的「列入四階損益」決定，不含非營業 */
+    /** 損益表用的營運商業模式；由主檔的「列入四階損益」決定，不含非營業 */
     public static function plSegments(): array
     {
         return \App\Models\BusinessSegmentModel::plCodes();
@@ -77,7 +77,7 @@ class TransactionModel extends AuditedModel
     }
 
     /**
-     * 四階損益分析：依業務別 × 損益階層彙總
+     * 四階損益分析：依商業模式 × 損益階層彙總
      *
      * @param string      $from  起始年月 yyyy-mm
      * @param string|null $to    結束年月 yyyy-mm（null＝與 $from 同月，即單月報表）
