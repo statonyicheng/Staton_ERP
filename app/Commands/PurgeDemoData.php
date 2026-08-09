@@ -60,17 +60,30 @@ class PurgeDemoData extends BaseCommand
 
         $before = $this->snapshot();
 
+        // 刪除順序必須由「被參照的一方最後刪」往回推，否則外鍵會擋住整筆交易 ——
+        // 而且 CI4 的 transComplete() 遇到失敗是整批回滾，畫面卻什麼都刪不掉。
         $this->db->transStart();
 
-        // ---- 傳票（連同分錄） ----
+        // ---- 1. 傳票（連同分錄） ----
         $jvIds = $this->idsOf('journal_vouchers', 'jv_id', 'jv_no', self::VOUCHER_NOS);
         $this->purge('journal_entries', 'je_jv_id', $jvIds, '傳票分錄');
         $this->purge('journal_vouchers', 'jv_id', $jvIds, '分錄傳票');
 
-        // ---- 商品與其庫存足跡 ----
+        // ---- 2. 收付款 → 應付（收付款單參照應付） ----
+        $this->purge('settlements', 'st_id', $this->idsOf('settlements', 'st_id', 'st_no', self::SETTLEMENT_NOS), '收付款單');
+        $this->purge('payables', 'ap_id', $this->idsOf('payables', 'ap_id', 'ap_no', self::AP_NOS), '應付帳款');
+
+        // ---- 3. 採購單明細 → 採購單（明細參照採購單與商品） ----
+        $poIds = $this->idsOf('purchase_orders', 'po_id', 'po_no', self::PO_NOS);
+        $this->purge('purchase_order_items', 'poi_po_id', $poIds, '採購單明細');
+        $this->purge('purchase_orders', 'po_id', $poIds, '採購單');
+
+        // ---- 4. 製令（參照商品） ----
+        $this->purge('work_orders', 'wo_id', $this->idsOf('work_orders', 'wo_id', 'wo_no', self::WO_NOS), '製令');
+
+        // ---- 5. 商品的庫存足跡與 BOM，最後才刪商品本身 ----
         $pIds = $this->idsOf('products', 'p_id', 'p_code', self::PRODUCT_CODES);
-        // 本機的商品已被使用者從畫面刪除，但庫存與異動還在（刪商品時系統沒有連帶檢查），
-        // 所以這裡改用「指向不存在商品」一併清乾淨
+        // 商品若已被人從畫面刪掉（系統沒擋），庫存與異動會變成孤兒，一併清掉
         $orphanStock = array_column($this->db->query(
             'SELECT ps_id FROM product_stock s LEFT JOIN products p ON p.p_id = s.ps_p_id WHERE p.p_id IS NULL'
         )->getResultArray(), 'ps_id');
@@ -86,24 +99,23 @@ class PurgeDemoData extends BaseCommand
         $this->purge('bom_items', 'bi_child_p_id', $pIds, 'BOM 子件');
         $this->purge('products', 'p_id', $pIds, '商品');
 
-        // ---- 製令 / 採購單 / 應付 / 付款 ----
-        $woIds = $this->idsOf('work_orders', 'wo_id', 'wo_no', self::WO_NOS);
-        $this->purge('work_orders', 'wo_id', $woIds, '製令');
-
-        $poIds = $this->idsOf('purchase_orders', 'po_id', 'po_no', self::PO_NOS);
-        $this->purge('purchase_order_items', 'poi_po_id', $poIds, '採購單明細');
-        $this->purge('purchase_orders', 'po_id', $poIds, '採購單');
-
-        $this->purge('settlements', 'st_id', $this->idsOf('settlements', 'st_id', 'st_no', self::SETTLEMENT_NOS), '收付款單');
-        $this->purge('payables', 'ap_id', $this->idsOf('payables', 'ap_id', 'ap_no', self::AP_NOS), '應付帳款');
-
-        // ---- 測試廠商 ----
+        // ---- 6. 測試廠商（採購單已刪，這時才能刪） ----
         $this->purge('suppliers', 's_id', $this->idsOf('suppliers', 's_id', 's_code', self::SUPPLIER_CODES), '廠商');
 
+        $committed = true;
         if ($this->dryRun) {
             $this->db->transRollback();
         } else {
             $this->db->transComplete();
+            $committed = $this->db->transStatus() !== false;
+        }
+
+        // 交易失敗時一定要講出來 —— 否則會印出「已刪除」但其實整批被回滾
+        if (! $committed) {
+            CLI::error('刪除失敗，資料已全部回復（通常是外鍵擋住：某張單據還參照著要刪的資料）');
+            CLI::write('原本打算刪除：', 'yellow');
+            foreach ($this->log as $line) CLI::write('    ' . $line, 'yellow');
+            return;
         }
 
         // ---- 報告 ----
@@ -116,6 +128,15 @@ class PurgeDemoData extends BaseCommand
         }
 
         $after = $this->dryRun ? $before : $this->snapshot();
+
+        // 真的刪掉了嗎：直接回頭數一次，不靠「指令有沒有報錯」
+        if (! $this->dryRun) {
+            $left = (int) $this->db->table('journal_vouchers')->whereIn('jv_no', self::VOUCHER_NOS)->countAllResults()
+                  + (int) $this->db->table('products')->whereIn('p_code', self::PRODUCT_CODES)->countAllResults();
+            CLI::newLine();
+            CLI::write($left === 0 ? '複查：測試傳票與測試商品皆已不存在' : "⚠ 複查：仍有 {$left} 筆測試資料存在，請重跑或人工確認",
+                $left === 0 ? 'green' : 'red');
+        }
 
         CLI::newLine();
         CLI::write('內帳資料（不受影響）', 'light_blue');
