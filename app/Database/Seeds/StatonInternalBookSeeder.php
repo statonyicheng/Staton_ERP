@@ -144,6 +144,12 @@ class StatonInternalBookSeeder extends Seeder
         $removed = $this->db->table('gl_transactions')->where('t_source', self::SOURCE)->countAllResults(false);
         $this->db->table('gl_transactions')->where('t_source', self::SOURCE)->delete();
 
+        // 【嵐可】示範資料不能跟真實內帳並存 —— 四階損益、資金餘額表、總帳、四大財務報表
+        // 都是直接加總 gl_transactions，兩套帳留在同一個資料庫，數字會全部疊在一起。
+        // （LankeFinanceSeeder 反過來也會清掉 internal_book，兩支是對稱的。）
+        $lankeCount = $this->db->table('gl_transactions')->where('t_source', 'lanke_book')->countAllResults(false);
+        $this->db->table('gl_transactions')->where('t_source', 'lanke_book')->delete();
+
         // 一次性清掉舊的【嵐石】石材樣本（TransactionSampleSeeder 灌的）。
         // 只比對這批樣本的固定摘要，不會誤刪使用者自己登錄的交易。
         $legacy = ['洞石訂單', '石材進貨', '順豐運費', 'AI 廣告投放', '顧問勞務費', '型錄印刷', '停車 / 交通費'];
@@ -162,7 +168,7 @@ class StatonInternalBookSeeder extends Seeder
             else { $exNet += $b['t_amount']; $exTax += $b['t_tax']; }
         }
         echo "── 【仕坦登】公司內帳匯入完成 ──\n";
-        echo "清除上次匯入：{$removed} 筆　清除嵐石舊樣本：{$legacyCount} 筆\n";
+        echo "清除上次匯入：{$removed} 筆　清除【嵐可】示範資料：{$lankeCount} 筆　清除嵐石舊樣本：{$legacyCount} 筆\n";
         echo "收入 {$report['income']} 筆　未稅 " . number_format($inNet) . "　稅 " . number_format($inTax) . "　含稅 " . number_format($inNet + $inTax) . "\n";
         echo "費用 {$report['expense']} 筆　未稅 " . number_format($exNet) . "　稅 " . number_format($exTax) . "　含稅 " . number_format($exNet + $exTax) . "\n";
         echo "淨利（內帳口徑：收入含稅 − 費用未稅）= " . number_format(($inNet + $inTax) - $exNet) . "\n";
