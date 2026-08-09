@@ -50,7 +50,7 @@ class SyncCustomerCode extends BaseCommand
             }
         }
 
-        $changed = $noTaxId = $conflict = $already = [];
+        $changed = $noTaxId = $conflict = $already = $cleared = [];
 
         foreach ($customers as $c) {
             $id    = (int) $c['c_id'];
@@ -59,7 +59,16 @@ class SyncCustomerCode extends BaseCommand
             $label = $c['c_name'];
 
             if (! preg_match('/^\d{8}$/', $taxId) || $taxId === '00000000') {
-                $noTaxId[] = "{$code}　{$label}";
+                // 還沒有統編：編號留空，不要憑空掛一組永遠不會用到的流水號
+                if ($code !== '') {
+                    $cleared[] = "{$code} → （留空）　{$label}";
+                    if (! $dryRun) {
+                        $model->update($id, ['c_code' => null]);
+                        unset($codeOwner[$code]);
+                    }
+                } else {
+                    $noTaxId[] = "（留空）　{$label}";
+                }
                 continue;
             }
 
@@ -82,15 +91,16 @@ class SyncCustomerCode extends BaseCommand
             }
         }
 
-        $this->section($dryRun ? '將會變更' : '已變更', $changed, 'green');
-        $this->section('沒有統編，保留流水號', $noTaxId, 'yellow');
+        $this->section($dryRun ? '將改為統編' : '已改為統編', $changed, 'green');
+        $this->section($dryRun ? '將清空編號（無統編）' : '已清空編號（無統編）', $cleared, 'yellow');
+        $this->section('無統編、編號本來就是空的', $noTaxId, 'dark_gray');
         $this->section('編號衝突，請人工確認', $conflict, 'red');
 
         CLI::newLine();
         CLI::write(str_repeat('=', 58), 'dark_gray');
         CLI::write(sprintf(
-            '客戶編號對齊：變更 %d　已相同 %d　無統編 %d　衝突 %d%s',
-            count($changed), count($already), count($noTaxId), count($conflict),
+            '客戶編號對齊：改為統編 %d　已相同 %d　清空 %d　無統編 %d　衝突 %d%s',
+            count($changed), count($already), count($cleared), count($noTaxId), count($conflict),
             $dryRun ? '（試算模式，尚未寫入）' : ''
         ), $conflict ? 'yellow' : 'green');
     }

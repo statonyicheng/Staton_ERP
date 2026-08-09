@@ -66,15 +66,20 @@ class CustomerModel extends AuditedModel
     }
 
     /**
-     * 產生客戶編號。
+     * 產生客戶編號 —— **客戶編號就是統一編號**。
      *
-     * **有統一編號時，客戶編號就是統一編號** —— 開單、查詢直接打統編就找得到，
-     * 不必再記一組系統流水號。統編由政府配發、本來就唯一，拿來當編號最省事。
+     * 開單、查詢直接打統編就找得到，不必再記一組系統流水號；
+     * 統編由政府配發、本來就唯一，拿來當編號最省事。
      *
-     * 沒有統編（個人客戶、或統編還沒拿到）才退回流水號 C00001、C00002…；
-     * 日後補上統編時，`erp:sync-customer-code` 會把編號一起換過來。
+     * 還沒有統編的客戶回傳 null（編號留空，畫面顯示「待補統編」）。
+     * 不發流水號的原因：發了就等於憑空造出一組永遠不會用到的號碼，
+     * 之後統編補上還要再換一次，中間開過的單據就對不回來。
+     * 統編補上時（客戶表單存檔或 `erp:sync-customer-code`）會自動帶入。
+     *
+     * 註：`c_code` 有 UNIQUE 索引，所以「沒統編」只能留空（NULL 可以重複），
+     * 不能全部塞 00000000 —— 第二筆就會被資料庫擋下來。
      */
-    public function generateCustomerCode(?string $taxId = null)
+    public function generateCustomerCode(?string $taxId = null): ?string
     {
         $taxId = trim((string) $taxId);
 
@@ -84,23 +89,7 @@ class CustomerModel extends AuditedModel
             return $taxId;
         }
 
-        // 沒統編才用流水號（只看 C 開頭的，統編當編號的不算在內）
-        $maxCode = $this->select('c_code')
-            ->like('c_code', 'C', 'after')
-            ->orderBy('c_code', 'DESC')
-            ->first();
-
-        if ($maxCode && $maxCode['c_code']) {
-            // 取出數字部分並 +1
-            $number = (int) substr($maxCode['c_code'], 1);
-            $nextNumber = $number + 1;
-        } else {
-            // 第一個編號
-            $nextNumber = 1;
-        }
-
-        // 格式化為 5 位數
-        return 'C' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        return null;
     }
 
     /**

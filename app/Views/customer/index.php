@@ -68,7 +68,14 @@
                         <tbody>
                             <?php foreach ($data as $item): ?>
                                 <tr class="table-row-link" data-href="<?= url_to('CustomerController::show', $item['c_id']) ?>">
-                                    <td><strong class="text-primary"><?= esc($item['c_code']) ?></strong></td>
+                                    <td>
+                                        <?php if (!empty($item['c_code'])): ?>
+                                            <strong class="text-primary"><?= esc($item['c_code']) ?></strong>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 fw-normal"
+                                                title="尚未取得統一編號，補上後編號會自動帶入">待補統編</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><strong><?= esc($item['c_name']) ?></strong></td>
                                     <td><?= esc($item['c_phone']) ?></td>
                                     <td><small class="text-muted"><?= esc($item['c_created_at']) ?></small></td>
