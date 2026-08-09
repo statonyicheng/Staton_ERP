@@ -100,13 +100,25 @@ class OpenItemController extends BaseController
         $offsetable = min($debitOpen, $creditOpen);
         if ($offsetable <= 0) return redirect()->back()->with('error', '所選項目無可沖銷金額');
 
+        // 沖銷日期＝這次收付實際發生的日期；收付制報表要靠它認列到正確的月份
+        $offsetDate = $this->request->getPost('offset_date') ?: date('Y-m-d');
+
         $this->db->transStart();
         try {
-            $this->distribute($debitIds, $offsetable);
-            $this->distribute($creditIds, $offsetable);
+            $this->distribute($debitIds, $offsetable, $offsetDate);
+            $this->distribute($creditIds, $offsetable, $offsetDate);
+
+            // 應收/應付沖銷完之後，對應的收付交易要從「未收付」翻成「已收付」——
+            // 否則賒銷的錢收到了，資金餘額表卻永遠看不到這筆現金流入
+            $synced = $this->syncSettlement(array_merge($debitIds, $creditIds));
+
             $this->db->transComplete();
             if ($this->db->transStatus() === false) return redirect()->back()->with('error', '沖銷失敗,已回復');
-            return redirect()->to('/open-item/account/' . $acId)->with('success', '已沖銷 ' . number_format($offsetable));
+
+            $msg = '已沖銷 ' . number_format($offsetable);
+            if ($synced > 0) $msg .= "，並更新 {$synced} 筆收付交易為已收付（資金餘額表已反映）";
+
+            return redirect()->to('/open-item/account/' . $acId)->with('success', $msg);
         } catch (\Exception $e) {
             $this->db->transRollback();
             return redirect()->back()->with('error', '沖銷失敗:' . $e->getMessage());
@@ -123,7 +135,7 @@ class OpenItemController extends BaseController
         return $sum;
     }
 
-    private function distribute(array $ids, int $amount): void
+    private function distribute(array $ids, int $amount, string $offsetDate): void
     {
         foreach ($ids as $id) {
             if ($amount <= 0) break;
@@ -133,8 +145,40 @@ class OpenItemController extends BaseController
             if ($open <= 0) continue;
             $take = min($open, $amount);
             $this->db->table('journal_entries')->where('je_id', (int) $id)
-                ->update(['je_offset' => (int) $e['je_offset'] + $take]);
+                ->update([
+                    'je_offset' => (int) $e['je_offset'] + $take,
+                    'je_offset_date' => $offsetDate,
+                ]);
             $amount -= $take;
         }
+    }
+
+    /**
+     * 重新推導受影響傳票的收付交易（沖銷會改變收付狀態與收付日期）。
+     *
+     * @return int 有幾筆收付交易因此變成已收付
+     */
+    private function syncSettlement(array $entryIds): int
+    {
+        $entryIds = array_map('intval', array_filter($entryIds));
+        if ($entryIds === []) return 0;
+
+        $jvIds = array_unique(array_column(
+            $this->db->table('journal_entries')->select('je_jv_id')->whereIn('je_id', $entryIds)->get()->getResultArray(),
+            'je_jv_id'
+        ));
+
+        $poster = new \App\Libraries\JournalGlPoster();
+        $settled = 0;
+
+        foreach ($jvIds as $jvId) {
+            $poster->sync((int) $jvId);
+            $settled += (int) $this->db->table('gl_transactions')
+                ->where('t_jv_id', (int) $jvId)
+                ->where('t_settle_status', '已收付')
+                ->countAllResults();
+        }
+
+        return $settled;
     }
 }

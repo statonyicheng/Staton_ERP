@@ -47,11 +47,13 @@ $groups = [
     // 會計相關全部收在同一個群組底下，再用子分類分「做事的」與「看數字的」。
     // 子分類用 ['section' => '名稱'] 標記，權限過濾與渲染都會辨識它。
     ['id' => 'grpAccounting', 'label' => '會計管理', 'icon' => 'bi-bank', 'items' => [
+        // 日常只從「分錄傳票」輸入 —— 存檔時會自動同步產生收付交易，
+        // 四階損益與資金餘額表跟著更新（App\Libraries\JournalGlPoster）。
+        // 「交易登錄（收付）」不再放進選單，但路由保留：內帳匯入與既有資料仍走那條路。
         ['section' => '日常作業'],
-        ['交易登錄（收付）', 'transaction', 'bi-journal-text', false],
-        ['分錄傳票（借貸）', 'journal', 'bi-journal-richtext', false],
-        ['自動分錄', 'auto-journal', 'bi-lightning-charge', false],
+        ['分錄傳票', 'journal', 'bi-journal-richtext', false],
         ['立沖帳作業', 'open-item/match', 'bi-check2-square', false],
+        ['自動分錄', 'auto-journal', 'bi-lightning-charge', false],
 
         ['section' => '會計帳簿'],
         ['日記帳', 'books/journal', 'bi-journal-text', false],

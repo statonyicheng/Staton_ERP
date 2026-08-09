@@ -104,7 +104,7 @@ class JournalGlPoster
         $plLines  = [];
         $taxTotal = 0;
         $hasCash  = false;
-        $hasArAp  = false;
+        $arApLines = [];
 
         foreach ($entries as $e) {
             $name  = (string) ($e['ac_name'] ?? '');
@@ -120,7 +120,7 @@ class JournalGlPoster
                 continue;
             }
             if ($name === self::AR_NAME || $name === self::AP_NAME) {
-                $hasArAp = true;
+                $arApLines[] = $e;
                 continue;
             }
             if (! empty($e['ac_is_pl'])) {
@@ -141,8 +141,37 @@ class JournalGlPoster
             return [];
         }
 
-        // 已收付：有動到現金/銀行存款；只掛應收應付則是未收付
-        $settled = $hasCash || (! $hasCash && ! $hasArAp);
+        // 收付狀態：
+        //   1. 有動到現金/銀行存款 → 當場收付，已收付
+        //   2. 掛應收/應付 → 要看立沖帳：全部沖銷完才算已收付，收付日＝最後一次沖銷日
+        //      （賒銷 8 月立帳、10 月收到錢，資金餘額表要算在 10 月）
+        //   3. 兩者皆無（純轉帳）→ 視為已收付，不影響資金
+        $settled = $hasCash;
+        $settleDate = $voucher['jv_date'];
+
+        if (! $hasCash && $arApLines !== []) {
+            $allOffset = true;
+            $lastOffsetDate = null;
+
+            foreach ($arApLines as $e) {
+                $amount = (int) $e['je_debit'] + (int) $e['je_credit'];
+                if ((int) $e['je_offset'] < $amount) {
+                    $allOffset = false;
+                    break;
+                }
+                if (! empty($e['je_offset_date']) && $e['je_offset_date'] > (string) $lastOffsetDate) {
+                    $lastOffsetDate = $e['je_offset_date'];
+                }
+            }
+
+            $settled = $allOffset;
+            if ($allOffset && $lastOffsetDate) {
+                $settleDate = $lastOffsetDate;
+            }
+        } elseif (! $hasCash && $arApLines === []) {
+            $settled = true;
+        }
+
         $now     = date('Y-m-d H:i:s');
         $rows    = [];
         $taxLeft = $taxTotal;
@@ -168,7 +197,7 @@ class JournalGlPoster
                 't_amount'        => $net,
                 't_tax'           => $tax,
                 't_settle_status' => $settled ? '已收付' : '未收付',
-                't_settle_date'   => $settled ? $voucher['jv_date'] : null,
+                't_settle_date'   => $settled ? $settleDate : null,
                 't_note'          => $voucher['jv_note'] ?? null,
                 't_source'        => self::SOURCE,
                 't_jv_id'         => (int) $voucher['jv_id'],

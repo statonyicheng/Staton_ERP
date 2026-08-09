@@ -59,9 +59,18 @@
         </div>
     </div>
 
-    <div class="card shadow-sm mt-3"><div class="card-body d-flex justify-content-between align-items-center">
+    <div class="card shadow-sm mt-3"><div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>本次可沖銷金額:<span class="fs-4 fw-bold" id="offsetable" style="color:var(--gold);">0</span></div>
-        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>執行沖銷</button>
+        <div class="d-flex align-items-center gap-2">
+            <label for="offsetDate" class="form-label mb-0 text-nowrap">
+                沖銷日期
+                <i class="bi bi-info-circle text-muted"
+                   title="錢實際收付的日期。資金餘額表會把這筆現金流認列在這個月份，不是立帳的月份"></i>
+            </label>
+            <input type="date" class="form-control" id="offsetDate" name="offset_date"
+                   value="<?= date('Y-m-d') ?>" style="width: auto;" required>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>執行沖銷</button>
+        </div>
     </div></div>
 </form>
 
