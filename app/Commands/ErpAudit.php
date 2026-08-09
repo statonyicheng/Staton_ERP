@@ -57,6 +57,7 @@ class ErpAudit extends BaseCommand
         $this->checkBalanceSheet();
         $this->checkOpenItem();
         $this->checkBooks();
+        $this->checkJournalGlBridge();
 
         CLI::newLine();
         CLI::write(str_repeat('=', 62), 'dark_gray');
@@ -495,6 +496,66 @@ class ErpAudit extends BaseCommand
         else { $this->fail++; CLI::write('  [FAIL] ' . $name, 'red'); }
         foreach (array_slice($details, 0, 10) as $d) CLI::write('         · ' . $d, 'dark_gray');
         if (count($details) > 10) CLI::write('         · …另有 ' . (count($details) - 10) . ' 項', 'dark_gray');
+    }
+
+    /**
+     * 分錄傳票 ↔ 收付交易的反向橋接必須保持同步。
+     *
+     * 手開的傳票會由 JournalGlPoster 同步產生收付交易，四階損益與資金餘額表才看得到。
+     * 這裡驗三件事：沒有指向已刪除傳票的孤兒、每筆推導結果與傳票現況一致、
+     * 有損益科目的手開傳票不會漏掉沒產生交易。脫鉤時報表不會報錯，只會數字錯，
+     * 所以一定要有這道檢查。
+     */
+    private function checkJournalGlBridge(): void
+    {
+        $orphans = (int) $this->db->query(
+            'SELECT COUNT(*) c FROM gl_transactions g
+               LEFT JOIN journal_vouchers v ON v.jv_id = g.t_jv_id
+              WHERE g.t_jv_id IS NOT NULL AND v.jv_id IS NULL'
+        )->getRow()->c;
+
+        $this->result('收付交易沒有指向已刪除的傳票', $orphans === 0,
+            $orphans ? ["{$orphans} 筆收付交易的來源傳票已不存在"] : [],
+            '傳票刪除時會一併回收它產生的交易');
+
+        $vouchers = $this->db->table('journal_vouchers')
+            ->where('jv_source_type !=', 'gl')
+            ->orWhere('jv_source_type IS NULL', null, false)
+            ->get()->getResultArray();
+
+        if ($vouchers === []) {
+            $this->info('傳票 → 收付交易同步', '目前沒有手開的分錄傳票');
+            return;
+        }
+
+        $poster = new \App\Libraries\JournalGlPoster();
+        $bad = [];
+        $synced = 0;
+
+        foreach ($vouchers as $v) {
+            $expected = $poster->derive($v);
+            $actual = $this->db->table('gl_transactions')
+                ->where('t_jv_id', (int) $v['jv_id'])
+                ->orderBy('t_id', 'ASC')->get()->getResultArray();
+
+            if (count($expected) !== count($actual)) {
+                $bad[] = sprintf('%s：應有 %d 筆收付交易，實際 %d 筆', $v['jv_no'], count($expected), count($actual));
+                continue;
+            }
+
+            foreach ($expected as $i => $exp) {
+                foreach (['t_ac_id', 't_direction', 't_amount', 't_tax', 't_settle_status', 't_segment'] as $f) {
+                    if ((string) $exp[$f] !== (string) ($actual[$i][$f] ?? '')) {
+                        $bad[] = sprintf('%s：%s 應為「%s」實際「%s」', $v['jv_no'], $f, $exp[$f], $actual[$i][$f] ?? '');
+                        break 2;
+                    }
+                }
+            }
+            $synced += count($actual);
+        }
+
+        $this->result('傳票 → 收付交易同步一致', empty($bad), $bad,
+            count($vouchers) . ' 張手開傳票，' . $synced . ' 筆收付交易與傳票內容相符');
     }
 
     private function info(string $name, string $msg): void

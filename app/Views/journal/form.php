@@ -39,7 +39,21 @@ foreach ($grouped as $tier => $list) {
                         <?php foreach ($types as $t): ?><option value="<?= $t ?>" <?= ($data['jv_type'] ?? '轉帳')===$t?'selected':'' ?>><?= $t ?></option><?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-5 mb-3">
+                <div class="col-md-2 mb-3">
+                    <label class="form-label">
+                        業務別
+                        <i class="bi bi-info-circle text-muted"
+                           title="四階損益分析會依業務別分欄；只動資產負債科目的傳票可留在共用/總部"></i>
+                    </label>
+                    <select class="form-select" name="jv_segment">
+                        <?php foreach (\App\Models\TransactionModel::SEGMENTS as $code => $label): ?>
+                            <option value="<?= esc($code) ?>" <?= ($data['jv_segment'] ?? 'M-0') === $code ? 'selected' : '' ?>>
+                                <?= esc($code === '非營業' ? $label : "{$code} {$label}") ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
                     <label class="form-label">摘要</label>
                     <input type="text" class="form-control" name="jv_summary" value="<?= esc($data['jv_summary'] ?? '') ?>" maxlength="255">
                 </div>

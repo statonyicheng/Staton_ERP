@@ -93,6 +93,7 @@ class JournalController extends BaseController
             $jvData = [
                 'jv_date' => $post['jv_date'] ?: date('Y-m-d'),
                 'jv_type' => $post['jv_type'] ?? '轉帳',
+                'jv_segment' => $post['jv_segment'] ?? 'M-0',
                 'jv_summary' => $post['jv_summary'] ?? null,
                 'jv_amount' => $sumDebit,
                 'jv_note' => $post['jv_note'] ?? null,
@@ -111,9 +112,20 @@ class JournalController extends BaseController
                 $v['je_sort'] = $sort += 10;
                 $this->jeModel->insert($v);
             }
+
+            // 同步產生收付交易 —— 四階損益分析與資金餘額表讀的是它，不是傳票。
+            // 少了這步，傳票存好了、那兩張報表卻不會有任何變化。
+            $glCount = (new \App\Libraries\JournalGlPoster())->sync((int) $jvId);
+
             $db->transComplete();
             if ($db->transStatus() === false) return redirect()->back()->withInput()->with('error', '儲存失敗，已回復');
-            return redirect()->to('/journal')->with('success', '分錄傳票儲存成功（借貸平衡 ' . number_format($sumDebit) . '）');
+
+            $msg = '分錄傳票儲存成功（借貸平衡 ' . number_format($sumDebit) . '）';
+            $msg .= $glCount > 0
+                ? "，並同步 {$glCount} 筆收付交易（四階損益／資金餘額表已更新）"
+                : '；本張只有資產負債科目的異動，不影響損益報表';
+
+            return redirect()->to('/journal')->with('success', $msg);
         } catch (\Exception $e) {
             $db->transRollback();
             return redirect()->back()->withInput()->with('error', '儲存失敗：' . $e->getMessage());
@@ -125,9 +137,15 @@ class JournalController extends BaseController
         if (!$this->jvModel->find($id)) return redirect()->to('/journal')->with('error', '傳票不存在');
         $db = \Config\Database::connect();
         $db->transStart();
+        // 一併回收這張傳票產生的收付交易，否則傳票刪了、四階損益還留著那筆數字
+        $glCount = (new \App\Libraries\JournalGlPoster())->remove((int) $id);
         $this->jeModel->deleteByVoucher($id);
         $this->jvModel->delete($id);
         $db->transComplete();
-        return redirect()->to('/journal')->with('success', '分錄傳票刪除成功');
+
+        $msg = '分錄傳票刪除成功';
+        if ($glCount > 0) $msg .= "，同時回收 {$glCount} 筆收付交易";
+
+        return redirect()->to('/journal')->with('success', $msg);
     }
 }
