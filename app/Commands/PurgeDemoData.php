@@ -95,7 +95,7 @@ class PurgeDemoData extends BaseCommand
         $this->purge('product_stock', 'ps_p_id', $pIds, '在庫量');
         $this->purge('stock_movements', 'sm_id', $orphanMoves, '庫存異動（商品已不存在）');
         $this->purge('product_stock', 'ps_id', $orphanStock, '在庫量（商品已不存在）');
-        $this->purge('bom_items', 'bi_p_id', $pIds, 'BOM 母件');
+        $this->purge('bom_items', 'bi_parent_p_id', $pIds, 'BOM 母件');
         $this->purge('bom_items', 'bi_child_p_id', $pIds, 'BOM 子件');
         $this->purge('products', 'p_id', $pIds, '商品');
 
@@ -169,6 +169,12 @@ class PurgeDemoData extends BaseCommand
     private function purge(string $table, string $col, array $ids, string $label): void
     {
         if ($ids === [] || ! $this->db->tableExists($table)) return;
+
+        // 欄位名稱打錯會讓整筆交易失敗、全部回滾，而且只有本機剛好跳過那段時才不會發作
+        if (! $this->db->fieldExists($col, $table)) {
+            CLI::error("設定錯誤：資料表 {$table} 沒有欄位 {$col}（{$label}）");
+            throw new \RuntimeException("欄位不存在：{$table}.{$col}");
+        }
 
         $n = $this->db->table($table)->whereIn($col, $ids)->countAllResults(false);
         if ($n === 0) return;
