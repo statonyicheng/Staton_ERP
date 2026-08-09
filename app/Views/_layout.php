@@ -44,27 +44,32 @@ $groups = [
         ['製令管理', 'work-order', 'bi-hammer', false],
         ['批次需求計劃 MRP', 'mrp', 'bi-list-check', false],
     ]],
-    ['id' => 'grpBooks', 'label' => '會計帳簿', 'icon' => 'bi-journals', 'items' => [
+    // 會計相關全部收在同一個群組底下，再用子分類分「做事的」與「看數字的」。
+    // 子分類用 ['section' => '名稱'] 標記，權限過濾與渲染都會辨識它。
+    ['id' => 'grpAccounting', 'label' => '會計管理', 'icon' => 'bi-bank', 'items' => [
+        ['section' => '日常作業'],
+        ['交易登錄（收付）', 'transaction', 'bi-journal-text', false],
+        ['分錄傳票（借貸）', 'journal', 'bi-journal-richtext', false],
+        ['自動分錄', 'auto-journal', 'bi-lightning-charge', false],
+        ['立沖帳作業', 'open-item/match', 'bi-check2-square', false],
+
+        ['section' => '會計帳簿'],
         ['日記帳', 'books/journal', 'bi-journal-text', false],
         ['總分類帳', 'books/ledger', 'bi-journal-bookmark', false],
         ['明細分類帳', 'books/detail', 'bi-journal-richtext', false],
-    ]],
-    ['id' => 'grpFinance', 'label' => '會計財務', 'icon' => 'bi-bank', 'items' => [
         ['科目彙總（收付制）', 'ledger', 'bi-list-columns', false],
-        ['分錄傳票（借貸）', 'journal', 'bi-journal-richtext', false],
-        ['交易登錄（收付）', 'transaction', 'bi-journal-text', false],
+
+        ['section' => '報表'],
         ['四階損益分析', 'pnl', 'bi-graph-up', false],
         ['資金餘額表', 'cashflow', 'bi-wallet2', false],
-        ['自動分錄', 'auto-journal', 'bi-lightning-charge', false],
-        ['立沖帳作業', 'open-item/match', 'bi-check2-square', false],
         ['立沖帳餘額表', 'open-item/balance', 'bi-clipboard2-check', false],
-        ['會計科目設定', 'account', 'bi-list-ol', false],
-    ]],
-    ['id' => 'grpFS', 'label' => '財務報表', 'icon' => 'bi-clipboard2-data', 'items' => [
         ['資產負債表', 'fs/balance', 'bi-columns-gap', false],
         ['損益表', 'fs/income', 'bi-file-earmark-bar-graph', false],
         ['現金流量表', 'fs/cashflow', 'bi-cash-coin', false],
         ['權益變動表', 'fs/equity', 'bi-pie-chart', false],
+
+        ['section' => '設定'],
+        ['會計科目設定', 'account', 'bi-list-ol', false],
     ]],
     ['id' => 'grpArAp', 'label' => '應收 / 應付', 'icon' => 'bi-arrow-left-right', 'items' => [
         ['應收帳款管理', 'receivable', 'bi-cash-stack', false],
@@ -89,16 +94,33 @@ if ($adminOnly) {
 $sysItems[] = ['個人資料', 'profile', 'bi-person', false];
 $groups[] = ['id' => 'grpSystem', 'label' => '系統管理', 'icon' => 'bi-gear', 'items' => $sysItems];
 
-// 依角色過濾側邊欄：看不到的模組直接不顯示，避免使用者點了才被擋
+// 依角色過濾側邊欄：看不到的模組直接不顯示，避免使用者點了才被擋。
+// 子分類標題（['section' => '名稱']）本身沒有權限，先留著，稍後再清掉空的。
 $role = (string) (session()->get('role') ?: ($adminOnly ? 'admin' : 'readonly'));
 foreach ($groups as $gi => $g) {
-    $groups[$gi]['items'] = array_values(array_filter(
+    $items = array_values(array_filter(
         $g['items'],
-        fn($it) => \Config\Permission::canView($role, \Config\Permission::moduleOf($it[1]))
+        fn($it) => isset($it['section'])
+            || \Config\Permission::canView($role, \Config\Permission::moduleOf($it[1]))
     ));
+
+    // 底下一個連結都不剩的子分類標題要拿掉，否則會出現孤零零的標題
+    $kept = [];
+    foreach ($items as $i => $it) {
+        if (isset($it['section'])) {
+            $hasChild = isset($items[$i + 1]) && ! isset($items[$i + 1]['section']);
+            if (! $hasChild) continue;
+        }
+        $kept[] = $it;
+    }
+
+    $groups[$gi]['items'] = $kept;
 }
-// 整組都沒權限就把群組收掉
-$groups = array_values(array_filter($groups, fn($g) => !empty($g['items'])));
+// 整組都沒權限就把群組收掉（只剩標題也算空）
+$groups = array_values(array_filter(
+    $groups,
+    fn($g) => ! empty(array_filter($g['items'], fn($it) => ! isset($it['section'])))
+));
 
 // 計算每個群組是否需展開（含 active 項目，或預設展開前兩個營運群組）
 $defaultOpen = ['grpBase', 'grpSales'];
@@ -158,7 +180,9 @@ $defaultOpen = ['grpBase', 'grpSales'];
 
             <?php foreach ($groups as $g):
                 $hasActive = false;
-                foreach ($g['items'] as $it) { if ($isActive($it[1])) { $hasActive = true; break; } }
+                foreach ($g['items'] as $it) {
+                    if (! isset($it['section']) && $isActive($it[1])) { $hasActive = true; break; }
+                }
                 $open = $hasActive || in_array($g['id'], $defaultOpen, true);
             ?>
                 <div class="erp-group-toggle" data-bs-toggle="collapse" data-bs-target="#<?= $g['id'] ?>"
@@ -168,12 +192,16 @@ $defaultOpen = ['grpBase', 'grpSales'];
                 </div>
                 <div class="collapse <?= $open ? 'show' : '' ?>" id="<?= $g['id'] ?>">
                     <div class="list-group list-group-flush">
-                        <?php foreach ($g['items'] as $it): [$label, $path, $icon, $soon] = $it; ?>
-                            <a href="<?= site_url($path) ?>"
-                               class="list-group-item list-group-item-action <?= $isActive($path) ? 'active' : '' ?>">
-                                <i class="bi <?= $icon ?>"></i> <?= esc($label) ?>
-                                <?php if ($soon): ?><span class="soon">建置中</span><?php endif; ?>
-                            </a>
+                        <?php foreach ($g['items'] as $it): ?>
+                            <?php if (isset($it['section'])): ?>
+                                <div class="erp-subsection"><?= esc($it['section']) ?></div>
+                            <?php else: [$label, $path, $icon, $soon] = $it; ?>
+                                <a href="<?= site_url($path) ?>"
+                                   class="list-group-item list-group-item-action <?= $isActive($path) ? 'active' : '' ?>">
+                                    <i class="bi <?= $icon ?>"></i> <?= esc($label) ?>
+                                    <?php if ($soon): ?><span class="soon">建置中</span><?php endif; ?>
+                                </a>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
                 </div>
