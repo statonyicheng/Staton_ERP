@@ -86,6 +86,8 @@ $routes->group('shipment', function ($routes) {
     $routes->get('view/(:num)', 'ShipmentController::view/$1');
 });
 
+$routes->get('ar-ap-analysis', 'ArApAnalysisController::index');
+
 $routes->group('business-segment', function ($routes) {
     $routes->get('/', 'BusinessSegmentController::index');
     $routes->get('create', 'BusinessSegmentController::create');

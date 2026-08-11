@@ -8,7 +8,7 @@ class JournalVoucherModel extends AuditedModel
 {
     protected $table = 'journal_vouchers';
     protected $primaryKey = 'jv_id';
-    protected $allowedFields = ['jv_no', 'jv_date', 'jv_type', 'jv_segment', 'jv_source_type', 'jv_source_id', 'jv_summary', 'jv_amount', 'jv_note'];
+    protected $allowedFields = ['jv_no', 'jv_date', 'jv_type', 'jv_segment', 'jv_partner_type', 'jv_partner_id', 'jv_source_type', 'jv_source_id', 'jv_summary', 'jv_amount', 'jv_note'];
     protected $useTimestamps = true;
     protected $createdField = 'jv_created_at';
     protected $updatedField = 'jv_updated_at';

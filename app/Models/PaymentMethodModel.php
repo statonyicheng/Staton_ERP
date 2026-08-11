@@ -9,7 +9,7 @@ class PaymentMethodModel extends Model
     protected $table = 'payment_methods';
     protected $primaryKey = 'pm_id';
     protected $allowedFields = [
-        'pm_name',
+        'pm_name', 'pm_type', 'pm_days',
     ];
 
     // Dates

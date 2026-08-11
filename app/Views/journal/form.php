@@ -68,6 +68,36 @@ foreach ($grouped as $tier => $list) {
                     <input type="text" class="form-control" name="jv_summary" value="<?= esc($data['jv_summary'] ?? '') ?>" maxlength="255">
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-5 mb-3">
+                    <label class="form-label" for="jvPartner">
+                        對象（客戶／廠商）
+                        <i class="bi bi-info-circle text-muted"
+                           title="有應收/應付時務必指定 —— 帳齡與周轉分析要靠它套用該對象的付款條件算逾期天數"></i>
+                    </label>
+                    <?php $pType = $data['jv_partner_type'] ?? ''; $pId = (string) ($data['jv_partner_id'] ?? ''); ?>
+                    <select class="form-select" id="jvPartner" name="jv_partner">
+                        <option value="">— 無（內部調整分錄）—</option>
+                        <optgroup label="客戶">
+                            <?php foreach ($customers ?? [] as $c): ?>
+                                <option value="customer:<?= $c['c_id'] ?>"
+                                    <?= ($pType === 'customer' && $pId === (string) $c['c_id']) ? 'selected' : '' ?>>
+                                    <?= esc($c['c_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                        <optgroup label="廠商">
+                            <?php foreach ($suppliers ?? [] as $s): ?>
+                                <option value="supplier:<?= $s['s_id'] ?>"
+                                    <?= ($pType === 'supplier' && $pId === (string) $s['s_id']) ? 'selected' : '' ?>>
+                                    <?= esc($s['s_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    </select>
+                    <div class="form-text">只動費用與銀行存款的傳票可以留空</div>
+                </div>
+            </div>
         </div>
     </div>
 

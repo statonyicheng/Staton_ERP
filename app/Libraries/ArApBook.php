@@ -38,14 +38,25 @@ class ArApBook
      */
     public function items(string $type, ?string $keyword = null, bool $onlyOpen = true): array
     {
+        // 對象（客戶／廠商）與其付款條件一起帶出來 —— 帳齡分析要靠付款條件推到期日，
+        // 用傳票日期直接當到期日會把「月結、還沒到期」的通通誤判成逾期
         $b = $this->db->table('journal_entries je')
             ->select('je.je_id, je.je_debit, je.je_credit, je.je_offset, je.je_offset_date, je.je_summary,
                       v.jv_id, v.jv_no, v.jv_date, v.jv_summary, v.jv_segment,
+                      v.jv_partner_type, v.jv_partner_id,
                       a.ac_id, a.ac_code, a.ac_name,
+                      COALESCE(c.c_name, s.s_name) as partner_name,
+                      COALESCE(cpm.pm_name, spm.pm_name) as pm_name,
+                      COALESCE(cpm.pm_type, spm.pm_type) as pm_type,
+                      COALESCE(cpm.pm_days, spm.pm_days) as pm_days,
                       (je.je_debit + je.je_credit) as amount,
                       (je.je_debit + je.je_credit - je.je_offset) as open_amt', false)
             ->join('journal_vouchers v', 'v.jv_id = je.je_jv_id', 'left')
             ->join('accounts a', 'a.ac_id = je.je_ac_id', 'left')
+            ->join('customers c', "c.c_id = v.jv_partner_id AND v.jv_partner_type = 'customer'", 'left', false)
+            ->join('suppliers s', "s.s_id = v.jv_partner_id AND v.jv_partner_type = 'supplier'", 'left', false)
+            ->join('payment_methods cpm', 'cpm.pm_id = c.c_pm_id', 'left')
+            ->join('payment_methods spm', 'spm.pm_id = s.s_pm_id', 'left')
             ->where('a.ac_ar_ap', $type);
 
         if ($onlyOpen) {
@@ -57,10 +68,64 @@ class ArApBook
                 ->orLike('v.jv_summary', $keyword)
                 ->orLike('je.je_summary', $keyword)
                 ->orLike('a.ac_name', $keyword)
+                ->orLike('c.c_name', $keyword)
+                ->orLike('s.s_name', $keyword)
                 ->groupEnd();
         }
 
-        return $b->orderBy('v.jv_date', 'ASC')->orderBy('je.je_id', 'ASC')->get()->getResultArray();
+        $rows = $b->orderBy('v.jv_date', 'ASC')->orderBy('je.je_id', 'ASC')->get()->getResultArray();
+
+        // 到期日與逾期天數在這裡算好，畫面、報表、匯出才不會各算各的
+        foreach ($rows as &$r) {
+            $r['due_date'] = PaymentTerms::dueDate($r['jv_date'], $r['pm_type'] ?? null, (int) ($r['pm_days'] ?? 0));
+            $r['overdue_days'] = (int) $r['open_amt'] > 0 ? PaymentTerms::overdueDays($r['due_date']) : 0;
+            $r['bucket'] = PaymentTerms::bucket($r['overdue_days']);
+            $r['terms'] = PaymentTerms::describe($r['pm_type'] ?? null, (int) ($r['pm_days'] ?? 0));
+            $r['partner_name'] = $r['partner_name'] ?: '（未指定對象）';
+        }
+        unset($r);
+
+        return $rows;
+    }
+
+    /**
+     * 依對象彙總的帳齡分析。
+     *
+     * @return array<string, array> partner_name => [terms, buckets[], total, overdue, maxOverdue, items[]]
+     */
+    public function aging(string $type): array
+    {
+        $out = [];
+
+        foreach ($this->items($type) as $r) {
+            $key = $r['partner_name'];
+
+            if (! isset($out[$key])) {
+                $out[$key] = [
+                    'partner' => $key,
+                    'terms' => $r['terms'],
+                    'buckets' => array_fill_keys(PaymentTerms::BUCKETS, 0),
+                    'total' => 0,
+                    'overdue' => 0,
+                    'maxOverdue' => 0,
+                    'items' => [],
+                ];
+            }
+
+            $open = (int) $r['open_amt'];
+            $out[$key]['buckets'][$r['bucket']] += $open;
+            $out[$key]['total'] += $open;
+            if ($r['overdue_days'] > 0) {
+                $out[$key]['overdue'] += $open;
+                $out[$key]['maxOverdue'] = max($out[$key]['maxOverdue'], $r['overdue_days']);
+            }
+            $out[$key]['items'][] = $r;
+        }
+
+        // 逾期金額大的排前面，要先處理的自然在最上面
+        uasort($out, fn($a, $b) => [$b['overdue'], $b['total']] <=> [$a['overdue'], $a['total']]);
+
+        return $out;
     }
 
     /**

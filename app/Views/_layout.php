@@ -77,7 +77,7 @@ $groups = [
     ['id' => 'grpArAp', 'label' => '應收 / 應付', 'icon' => 'bi-arrow-left-right', 'items' => [
         ['應收帳款管理', 'receivable', 'bi-cash-stack', false],
         ['應付帳款管理', 'payable', 'bi-credit-card', false],
-        ['收付款作業', 'settlement', 'bi-bank2', false],
+        ['帳齡與周轉分析', 'ar-ap-analysis', 'bi-speedometer2', false],
     ]],
     ['id' => 'grpAsset', 'label' => '成本與資產', 'icon' => 'bi-buildings', 'items' => [
         ['成本計算', 'cost', 'bi-calculator-fill', false],

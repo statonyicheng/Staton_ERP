@@ -38,6 +38,8 @@ class JournalController extends BaseController
             'isEdit' => false,
             'accounts' => $this->accountModel->getAllForDropdown(),
             'types' => JournalVoucherModel::TYPES,
+            'customers' => $this->partners('customers', 'c_id, c_name', 'c_name'),
+            'suppliers' => $this->partners('suppliers', 's_id, s_name', 's_name'),
             // 只是預覽 —— 實際編號在存檔時依最終日期原子取號，避免開了表單沒存就佔掉號碼
             'defaultNo' => \App\Libraries\DocumentNumber::preview('JV'),
         ]);
@@ -66,6 +68,8 @@ class JournalController extends BaseController
             'data' => $jv,
             'accounts' => $this->accountModel->getAllForDropdown(),
             'types' => JournalVoucherModel::TYPES,
+            'customers' => $this->partners('customers', 'c_id, c_name', 'c_name'),
+            'suppliers' => $this->partners('suppliers', 's_id, s_name', 's_name'),
         ]);
     }
 
@@ -102,6 +106,8 @@ class JournalController extends BaseController
             return redirect()->back()->withInput()->with('error', '金額不可為 0');
         }
 
+        $partner = $this->parsePartner($post['jv_partner'] ?? '');
+
         $db = \Config\Database::connect();
         $db->transStart();
         try {
@@ -109,6 +115,9 @@ class JournalController extends BaseController
                 'jv_date' => $post['jv_date'] ?: date('Y-m-d'),
                 'jv_type' => $post['jv_type'] ?? '轉帳',
                 'jv_segment' => $post['jv_segment'] ?? 'M-0',
+                // 對象以「類型:id」單一欄位送出，存進兩個欄位；帳齡分析要靠它套付款條件
+                'jv_partner_type' => $partner['type'],
+                'jv_partner_id' => $partner['id'],
                 'jv_summary' => $post['jv_summary'] ?? null,
                 'jv_amount' => $sumDebit,
                 'jv_note' => $post['jv_note'] ?? null,
@@ -147,6 +156,24 @@ class JournalController extends BaseController
             $db->transRollback();
             return redirect()->back()->withInput()->with('error', '儲存失敗：' . $e->getMessage());
         }
+    }
+
+    /** 下拉用的對象清單 */
+    private function partners(string $table, string $select, string $orderBy): array
+    {
+        return db_connect()->table($table)->select($select)->orderBy($orderBy, 'ASC')->get()->getResultArray();
+    }
+
+    /** 把表單的「customer:12」拆成類型與 id；格式不對一律視為沒有對象 */
+    private function parsePartner(string $raw): array
+    {
+        [$type, $id] = array_pad(explode(':', $raw, 2), 2, null);
+
+        if (! in_array($type, ['customer', 'supplier'], true) || ! ctype_digit((string) $id)) {
+            return ['type' => null, 'id' => null];
+        }
+
+        return ['type' => $type, 'id' => (int) $id];
     }
 
     public function delete($id)

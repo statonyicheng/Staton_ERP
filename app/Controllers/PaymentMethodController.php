@@ -51,6 +51,10 @@ class PaymentMethodController extends BaseController
         try {
             $data = [
                 'pm_name' => $this->request->getPost('pm_name'),
+                // 付款條件：帳齡分析靠這兩欄推算到期日
+                'pm_type' => in_array($this->request->getPost('pm_type'), ['immediate','net','eom'], true)
+                    ? $this->request->getPost('pm_type') : 'immediate',
+                'pm_days' => max(0, (int) $this->request->getPost('pm_days')),
             ];
 
             $this->paymentMethodModel->insert($data);
@@ -97,6 +101,10 @@ class PaymentMethodController extends BaseController
         try {
             $updateData = [
                 'pm_name' => $this->request->getPost('pm_name'),
+                // 付款條件：帳齡分析靠這兩欄推算到期日
+                'pm_type' => in_array($this->request->getPost('pm_type'), ['immediate','net','eom'], true)
+                    ? $this->request->getPost('pm_type') : 'immediate',
+                'pm_days' => max(0, (int) $this->request->getPost('pm_days')),
             ];
 
             $this->paymentMethodModel->update($id, $updateData);

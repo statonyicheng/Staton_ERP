@@ -72,6 +72,32 @@ function getFieldClass($fieldName)
                             <div class="form-text">例如：現金、月結30天、支票等</div>
                         </div>
                     </div>
+
+                    <div class="alert alert-info py-2">
+                        <i class="bi bi-info-circle me-2"></i>
+                        下面兩欄決定<strong>到期日怎麼算</strong> ——「帳齡與周轉分析」用它判斷逾期幾天。
+                        沒設定的話會當成即期（開帳當天就到期），月結客戶會被誤判成逾期。
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="pmType" class="form-label">付款條件類型</label>
+                            <select class="form-select" id="pmType" name="pm_type">
+                                <?php $pmType = old('pm_type', $data['pm_type'] ?? 'immediate'); ?>
+                                <?php foreach (\App\Libraries\PaymentTerms::TYPES as $k => $v): ?>
+                                    <option value="<?= $k ?>" <?= $pmType === $k ? 'selected' : '' ?>><?= esc($v) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="pmDays" class="form-label">天數 / 日期</label>
+                            <input type="number" class="form-control" id="pmDays" name="pm_days" min="0" max="60"
+                                   value="<?= old('pm_days', $data['pm_days'] ?? 0) ?>">
+                            <div class="form-text">
+                                「發票日起算 N 天」填天數（如 30）；「月結，次月 N 日」填日期（如 1 代表次月 1 號）；即期填 0。
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 時間戳記資訊 (僅編輯時顯示) -->

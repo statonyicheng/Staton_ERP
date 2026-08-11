@@ -39,6 +39,7 @@ class Permission
         'pnl' => '四階損益', 'cashflow' => '資金餘額', 'auto-journal' => '自動分錄',
         'open-item' => '立沖帳', 'fs' => '財務報表', 'books' => '會計帳簿',
         'receivable' => '應收帳款', 'payable' => '應付帳款', 'settlement' => '收付款',
+        'ar-ap-analysis' => '帳齡與周轉分析',
         'cost' => '成本計算', 'fixed-asset' => '固定資產', 'invoice' => '電子發票',
         'user' => '使用者管理', 'audit-log' => '操作紀錄',
     ];
@@ -65,6 +66,7 @@ class Permission
             'account' => 'rw', 'business-segment' => 'rw', 'ledger' => 'rw', 'journal' => 'rw', 'transaction' => 'rw',
             'pnl' => 'rw', 'cashflow' => 'rw', 'auto-journal' => 'rw', 'open-item' => 'rw',
             'fs' => 'rw', 'books' => 'rw', 'receivable' => 'rw', 'payable' => 'rw', 'settlement' => 'rw',
+            'ar-ap-analysis' => 'rw',
             'invoice' => 'rw', 'fixed-asset' => 'rw', 'cost' => 'rw',
             'customer' => 'r', 'supplier' => 'r', 'product' => 'r', 'pricing' => 'r',
             'payment-method' => 'r', 'order' => 'r', 'quote' => 'r', 'shipment' => 'r',
