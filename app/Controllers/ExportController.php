@@ -117,6 +117,21 @@ class ExportController extends BaseController
         return $this->db->query($sql, $binds)->getResultArray();
     }
 
+    /**
+     * 應收／應付的未沖銷明細（與畫面同一個來源）。
+     * 摘要與科目在這裡先組好字串，匯出的欄位才會跟畫面看到的一致。
+     */
+    private function arApRows(string $type): array
+    {
+        $rows = (new \App\Libraries\ArApBook())->items($type);
+
+        return array_map(static function ($r) {
+            $r['summary'] = $r['je_summary'] ?: $r['jv_summary'];
+            $r['acct'] = trim($r['ac_code'] . ' ' . $r['ac_name']);
+            return $r;
+        }, $rows);
+    }
+
     /** 財務報表年度（與 FinancialStatementController 一致，預設今年） */
     private function fsYear(): int
     {
@@ -452,29 +467,27 @@ class ExportController extends BaseController
                     LEFT JOIN accounts a ON a.ac_id = e.je_ac_id
                     ORDER BY v.jv_date DESC, v.jv_id DESC, e.je_sort"),
             ],
+            // 應收/應付已改為直接讀會計帳上的未沖銷分錄（App\Libraries\ArApBook）。
+            // 匯出必須跟畫面同一個資料來源，否則會出現「畫面有資料、Excel 是空的」。
             'receivable' => [
-                'title' => '應收帳款', 'orientation' => 'L',
+                'title' => '應收帳款（未沖銷）', 'orientation' => 'L',
                 'columns' => [
-                    $this->col('ar_no', '應收單號'), $this->col('ar_date', '日期'),
-                    $this->col('c_name', '客戶'), $this->col('ar_ref_no', '來源單號'),
-                    $this->col('ar_amount', '應收金額', 'money'), $this->col('ar_received', '已收', 'money'),
-                    $this->col('open', '未收', 'money'), $this->col('ar_due_date', '到期日'), $this->col('ar_status', '狀態'),
+                    $this->col('jv_date', '日期'), $this->col('jv_no', '傳票編號'),
+                    $this->col('summary', '摘要'), $this->col('acct', '會計科目'),
+                    $this->col('amount', '應收金額', 'money'), $this->col('je_offset', '已收', 'money'),
+                    $this->col('open_amt', '未收', 'money'), $this->col('je_offset_date', '沖銷日'),
                 ],
-                'rows' => fn() => array_map(function ($r) { $r['open'] = (int) $r['ar_amount'] - (int) $r['ar_received']; return $r; },
-                    $this->sql("SELECT r.*, c.c_name FROM receivables r
-                        LEFT JOIN customers c ON c.c_id = r.ar_c_id ORDER BY r.ar_date DESC, r.ar_id DESC")),
+                'rows' => fn() => $this->arApRows(\App\Libraries\ArApBook::AR),
             ],
             'payable' => [
-                'title' => '應付帳款', 'orientation' => 'L',
+                'title' => '應付帳款（未沖銷）', 'orientation' => 'L',
                 'columns' => [
-                    $this->col('ap_no', '應付單號'), $this->col('ap_date', '日期'),
-                    $this->col('s_name', '廠商'), $this->col('ap_ref_no', '來源單號'),
-                    $this->col('ap_amount', '應付金額', 'money'), $this->col('ap_paid', '已付', 'money'),
-                    $this->col('open', '未付', 'money'), $this->col('ap_due_date', '到期日'), $this->col('ap_status', '狀態'),
+                    $this->col('jv_date', '日期'), $this->col('jv_no', '傳票編號'),
+                    $this->col('summary', '摘要'), $this->col('acct', '會計科目'),
+                    $this->col('amount', '應付金額', 'money'), $this->col('je_offset', '已付', 'money'),
+                    $this->col('open_amt', '未付', 'money'), $this->col('je_offset_date', '沖銷日'),
                 ],
-                'rows' => fn() => array_map(function ($r) { $r['open'] = (int) $r['ap_amount'] - (int) $r['ap_paid']; return $r; },
-                    $this->sql("SELECT p.*, s.s_name FROM payables p
-                        LEFT JOIN suppliers s ON s.s_id = p.ap_s_id ORDER BY p.ap_date DESC, p.ap_id DESC")),
+                'rows' => fn() => $this->arApRows(\App\Libraries\ArApBook::AP),
             ],
             'settlement' => [
                 'title' => '收付款紀錄',
