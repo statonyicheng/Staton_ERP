@@ -9,7 +9,7 @@ class AccountModel extends AuditedModel
     protected $table = 'accounts';
     protected $primaryKey = 'ac_id';
     protected $allowedFields = [
-        'ac_code', 'ac_name', 'ac_category', 'ac_tier', 'ac_is_pl', 'ac_open_item', 'ac_sort',
+        'ac_code', 'ac_name', 'ac_category', 'ac_tier', 'ac_is_pl', 'ac_open_item', 'ac_ar_ap', 'ac_sort',
     ];
 
     protected $useTimestamps = true;

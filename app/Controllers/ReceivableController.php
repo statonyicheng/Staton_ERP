@@ -25,19 +25,23 @@ class ReceivableController extends BaseController
         return $this->customerModel->select('c_id, c_code, c_name')->orderBy('c_name', 'ASC')->findAll();
     }
 
+    /**
+     * 應收帳款＝帳上被標記為「應收」的科目、尚未沖銷的分錄。
+     * 與應付同一套邏輯（見 App\Libraries\ArApBook）。
+     */
     public function index()
     {
         $keyword = $this->request->getGet('keyword');
-        $status = $this->request->getGet('status');
-        $page = $this->request->getGet('page') ?: 1;
-        $data = $this->arModel->getList($keyword, $page, $status);
+        $showAll = (bool) $this->request->getGet('all');
+
+        $book = new \App\Libraries\ArApBook();
 
         return view('receivable/index', [
-            'data' => $data['data'],
-            'keyword' => $keyword, 'status' => $status,
-            'statuses' => ReceivableModel::STATUSES,
-            'summary' => $this->arModel->summary(),
-            'pager' => ['currentPage' => $data['currentPage'], 'totalPages' => $data['totalPages']],
+            'items' => $book->items(\App\Libraries\ArApBook::AR, $keyword, ! $showAll),
+            'summary' => $book->summary(\App\Libraries\ArApBook::AR),
+            'accounts' => $book->accounts(\App\Libraries\ArApBook::AR),
+            'keyword' => $keyword,
+            'showAll' => $showAll,
         ]);
     }
 

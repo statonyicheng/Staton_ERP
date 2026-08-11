@@ -65,6 +65,20 @@ if (!function_exists('getFieldClass')) {
                     <label class="form-label">排序</label>
                     <input type="number" class="form-control" name="ac_sort" value="<?= old('ac_sort', $data['ac_sort'] ?? 0) ?>">
                 </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="acArAp">
+                        應收付歸屬
+                        <i class="bi bi-info-circle text-muted"
+                           title="設定後，這個科目未沖銷的分錄會出現在應收帳款管理或應付帳款管理"></i>
+                    </label>
+                    <select class="form-select" name="ac_ar_ap" id="acArAp">
+                        <?php $arAp = old('ac_ar_ap', $data['ac_ar_ap'] ?? ''); ?>
+                        <option value="" <?= $arAp === '' ? 'selected' : '' ?>>不列入</option>
+                        <option value="AR" <?= $arAp === 'AR' ? 'selected' : '' ?>>應收</option>
+                        <option value="AP" <?= $arAp === 'AP' ? 'selected' : '' ?>>應付</option>
+                    </select>
+                    <div class="form-text">設為應收/應付時請一併勾選下方「需立沖帳」，否則算不出未沖銷餘額</div>
+                </div>
                 <div class="col-md-12 mb-3">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" name="ac_open_item" value="1" id="acOpenItem" <?= old('ac_open_item', $data['ac_open_item'] ?? 0) ? 'checked' : '' ?>>

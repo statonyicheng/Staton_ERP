@@ -20,19 +20,25 @@ class PayableController extends BaseController
         $this->supplierModel = new SupplierModel();
     }
 
+    /**
+     * 應付帳款＝帳上被標記為「應付」的科目、尚未沖銷的分錄。
+     *
+     * 舊版讀的是獨立的 `payables` 表（只吃結案採購單與手動新增），跟分錄傳票毫無關聯，
+     * 導致「借費用／貸應付薪資」的傳票明明記了帳，這個畫面卻是空的。
+     */
     public function index()
     {
         $keyword = $this->request->getGet('keyword');
-        $status = $this->request->getGet('status');
-        $page = $this->request->getGet('page') ?: 1;
-        $data = $this->apModel->getList($keyword, $page, $status);
+        $showAll = (bool) $this->request->getGet('all');
+
+        $book = new \App\Libraries\ArApBook();
 
         return view('payable/index', [
-            'data' => $data['data'],
-            'keyword' => $keyword, 'status' => $status,
-            'statuses' => PayableModel::STATUSES,
-            'summary' => $this->apModel->summary(),
-            'pager' => ['currentPage' => $data['currentPage'], 'totalPages' => $data['totalPages']],
+            'items' => $book->items(\App\Libraries\ArApBook::AP, $keyword, ! $showAll),
+            'summary' => $book->summary(\App\Libraries\ArApBook::AP),
+            'accounts' => $book->accounts(\App\Libraries\ArApBook::AP),
+            'keyword' => $keyword,
+            'showAll' => $showAll,
         ]);
     }
 

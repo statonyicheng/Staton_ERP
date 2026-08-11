@@ -48,6 +48,9 @@ class AccountController extends BaseController
             $data = $this->request->getPost();
             $data['ac_is_pl'] = ($data['ac_tier'] ?? '') === '不進損益' ? 0 : 1;
             $data['ac_open_item'] = $this->request->getPost('ac_open_item') ? 1 : 0;
+            // 應收付歸屬：空字串存成 null，查詢時才不會把「不列入」的科目撈進來
+            $arAp = (string) $this->request->getPost('ac_ar_ap');
+            $data['ac_ar_ap'] = in_array($arAp, ['AR', 'AP'], true) ? $arAp : null;
             $this->accountModel->insert($data);
             return redirect()->to('/account')->with('success', '會計科目新增成功');
         } catch (\Exception $e) {
@@ -81,6 +84,9 @@ class AccountController extends BaseController
             $data = $this->request->getPost();
             $data['ac_is_pl'] = ($data['ac_tier'] ?? '') === '不進損益' ? 0 : 1;
             $data['ac_open_item'] = $this->request->getPost('ac_open_item') ? 1 : 0;
+            // 應收付歸屬：空字串存成 null，查詢時才不會把「不列入」的科目撈進來
+            $arAp = (string) $this->request->getPost('ac_ar_ap');
+            $data['ac_ar_ap'] = in_array($arAp, ['AR', 'AP'], true) ? $arAp : null;
             $this->accountModel->update($id, $data);
             return redirect()->to('/account')->with('success', '會計科目更新成功');
         } catch (\Exception $e) {
